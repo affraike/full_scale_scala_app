@@ -40,7 +40,7 @@ To compile locally the full application, you must first clone the two repositori
 ```
 git clone https://github.com/affraike/full_scale_scala_app.git
 cd full_scale_scala_app
-git clone
+git clone https://github.com/maroneal/acumen.git
 ```
 
 Then, you can use, in one command line (terminal)
