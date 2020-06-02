@@ -15,6 +15,8 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext
 
+import acumen.ui._
+
 @Singleton
 final class HomeController @Inject()(
     assets: Assets,
@@ -24,7 +26,8 @@ final class HomeController @Inject()(
     cc: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends AbstractController(cc)
-    with HasDatabaseConfigProvider[JdbcProfile] {
+    with HasDatabaseConfigProvider[JdbcProfile]
+    with testAcumenState {
 
   def index: Action[AnyContent] = assets.at("index.html")
 
@@ -37,21 +40,13 @@ final class HomeController @Inject()(
   }
 
   def hello(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok("Hello from play!")
+    Ok("Hello from play! BTW, Acumen is " + getStateAcumen())
     //Call a method from Acumen's class "App.scala"
+
   }
 
   def helloNbr(nbr: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok(s"You gave me $nbr")
-  }
-
-  def insertSharedModel(): Action[SharedModelClass] = Action(parse.json[SharedModelClass]).async {
-    implicit request: Request[SharedModelClass] =>
-      db.run(SharedModelTable.query += request.body).map(Ok(_))
-  }
-
-  def sharedModels: Action[AnyContent] = Action.async {
-    db.run(SharedModelTable.query.result).map(Ok(_))
   }
 
   def todo: Action[AnyContent] = TODO
