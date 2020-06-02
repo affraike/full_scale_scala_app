@@ -4,8 +4,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 name := "Full Stack Scala in Heroku"
 
 version := "0.1"
-scalaVersion   := "2.12.10"
-scalaBinaryVersion  := "2.12.10"
+scalaVersion   := "2.11.6"
+scalaBinaryVersion  := "2.11.6"
 crossScalaVersions := Seq("2.12.10", "2.11.6")
 
 scalacOptions ++= Seq(
@@ -27,11 +27,11 @@ lazy val `shared` = crossProject(JSPlatform, JVMPlatform)
 lazy val sharedJVM = `shared`.jvm
 lazy val sharedJS = `shared`.js
 
-lazy val acumen = Project(id = "acumen", base = file("./acumen"))
+lazy val acumen = (project in file("./acumen"))
   //.enablePlugins(PlayScala)//if using playscala..or whatever
   .settings(
     name := "acumen",
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.11.6",
 
     resolvers ++= Seq(
       ("snapshots" at "http://oss.sonatype.org/content/repositories/snapshots").withAllowInsecureProtocol(true),
@@ -48,13 +48,14 @@ lazy val acumen = Project(id = "acumen", base = file("./acumen"))
 lazy val `backend` = (project in file("./backend"))
   .enablePlugins(PlayScala)//if using playscala..or whatever
   .settings(
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.11.6",
     BackendSettings(),
     BackendSettings.herokuSettings(),
+    SharedSettings(),
+    SharedSettings.jvmSettings,
     libraryDependencies += guice // dependency injection
   )
-  .aggregate(acumen)
-  .dependsOn(acumen, sharedJVM)
+  .dependsOn(acumen)
 
 /** Frontend will use react with Slinky */
 lazy val `frontend` = (project in file("./frontend"))
@@ -62,7 +63,8 @@ lazy val `frontend` = (project in file("./frontend"))
   .enablePlugins(ScalaJSBundlerPlugin)
   .settings(
     scalaVersion := "2.12.10",
-    FrontendSettings()
+    FrontendSettings(),
+    SharedSettings()
   )
   .dependsOn(sharedJS)
 
