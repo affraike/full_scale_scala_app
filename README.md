@@ -38,7 +38,8 @@ heroku run bash --app APPNAME
 ## Dev environment
 To compile locally the full application, you must first clone the two repositories:
 ```
-git clone
+git clone https://github.com/affraike/full_scale_scala_app.git
+cd full_scale_scala_app
 git clone
 ```
 
