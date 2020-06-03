@@ -41,12 +41,17 @@ final class HomeController @Inject()(
 
   def hello(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok("Hello from play! BTW, Acumen is " + getStateAcumen())
-    //Call a method from Acumen's class "App.scala"
+    //Call a method from Acumen's class "App.scala" : Done
 
   }
 
   def helloNbr(nbr: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok(s"You gave me $nbr")
+  }
+
+  def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    setStateAcumen(str)
+    Ok("Acumen state changed to " + str)
   }
 
   def todo: Action[AnyContent] = TODO

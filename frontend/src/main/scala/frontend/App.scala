@@ -20,6 +20,7 @@ object App {
   dom.console.log(css.asInstanceOf[js.Object])
 
   val postBus: EventBus[Int] = new EventBus()
+  val postBus2: EventBus[String] = new EventBus()
 
   val numberToPost: Var[Int] = Var(0)
 
@@ -33,6 +34,25 @@ object App {
           .map(_.body)
       )
   )
+
+  val returned2: EventStream[String] = postBus2.events.flatMap(
+    str =>
+      EventStream.fromFuture(
+        boilerplate
+          .response(asStringAlways)
+          .post(path("acumen").param("str", str.toString))
+          .send()
+          .map(_.body)
+      )
+  )
+
+  def change(bool: Boolean): String = {
+    if (bool){
+      return "on"
+    }else{
+      return "off"
+    }
+  }
 
   def randomSharedModel(): SharedModelClass = SharedModelClass(Random.nextString(5), Random.nextInt())
 
@@ -57,41 +77,21 @@ object App {
       span("Returned: ", child <-- returned.map(identity[String]))
     ),
     section(
-      h2("Database works?"),
-      p(
-        button(
-          onClick --> (
-              _ =>
-                boilerplate
-                  .response(ignore)
-                  .put(path("models", "insert"))
-                  .body(randomSharedModel())
-                  .send()
-            ),
-          "Insert random element"
-        )
-      ), {
-        val downloadBus = new EventBus[Boolean]()
-
-        p(
-          button("Download models", onClick.mapTo(true) --> downloadBus.writer),
-          ul(
-            children <-- downloadBus.events.flatMap(
-              _ =>
-                EventStream
-                  .fromFuture(
-                    boilerplate
-                      .get(path("models", "get"))
-                      .response(asStringAlways.map(decode[List[SharedModelClass]]))
-                      .send()
-                      .map(_.body.getOrElse(Nil))
-                  )
-                  .map(_.map(_.toString).map(li(_)))
-            )
+      label(
+        cls:="switch",
+        input(
+          typ:="checkbox",
+          id:="launchToggle",
+          inContext(
+          thisElem =>
+            onClick.mapTo(change(thisElem.ref.checked)) --> postBus2.writer
           )
+        ),
+        span(
+          cls:="slider round",
         )
-      }
+      ),
+      span("Returned: ", child <-- returned2.map(identity[String]))
     )
   )
-
 }
