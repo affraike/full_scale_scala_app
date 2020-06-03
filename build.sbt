@@ -1,5 +1,5 @@
 import sbt.Keys.{resolvers, _}
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+//import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 name := "Full Stack Scala in Heroku"
 
@@ -13,22 +13,7 @@ scalacOptions ++= Seq(
   "-feature"
 )
 
-lazy val `shared` = crossProject(JSPlatform, JVMPlatform)
-  .crossType(CrossType.Pure)
-  .disablePlugins(HerokuPlugin) // no need of Heroku for shared project
-  .settings(
-    scalaVersion := "2.12.10",
-    SharedSettings()
-  )
-  .jvmSettings(
-    SharedSettings.jvmSettings
-  )
-
-lazy val sharedJVM = `shared`.jvm
-lazy val sharedJS = `shared`.js
-
 lazy val acumen = (project in file("./acumen"))
-  //.enablePlugins(PlayScala)//if using playscala..or whatever
   .settings(
     name := "acumen",
     scalaVersion := "2.11.6",
@@ -37,12 +22,8 @@ lazy val acumen = (project in file("./acumen"))
       ("snapshots" at "http://oss.sonatype.org/content/repositories/snapshots").withAllowInsecureProtocol(true),
       ("releases"  at "http://oss.sonatype.org/content/repositories/releases").withAllowInsecureProtocol(true)
     ),
-      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-  //  BackendSettings(),
-   // BackendSettings.herokuSettings(),
-  //  libraryDependencies += guice // dependency injection
+      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
   )
-  //.dependsOn(sharedJVM)
 
 /** Backend server uses Play framework */
 lazy val `backend` = (project in file("./backend"))
@@ -66,7 +47,6 @@ lazy val `frontend` = (project in file("./frontend"))
     FrontendSettings(),
     SharedSettings()
   )
-  .dependsOn(sharedJS)
 
 addCommandAlias("dev", ";frontend/fastOptJS::startWebpackDevServer;~frontend/fastOptJS")
 

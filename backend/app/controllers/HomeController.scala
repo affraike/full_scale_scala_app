@@ -5,12 +5,8 @@ import play.api.Configuration
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.http.HttpErrorHandler
 import play.api.mvc._
-import utils.WriteableImplicits._
 import io.circe.generic.auto._
-import models.SharedModelClass
 import slick.jdbc.JdbcProfile
-import utils.ReadsImplicits._
-import utils.database.tables.SharedModelTable
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext

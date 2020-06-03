@@ -8,7 +8,6 @@ import org.scalajs.dom
 import sttp.client._
 import io.circe.generic.auto._
 import io.circe.parser.decode
-import models.SharedModelClass
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
@@ -53,8 +52,6 @@ object App {
       return "off"
     }
   }
-
-  def randomSharedModel(): SharedModelClass = SharedModelClass(Random.nextString(5), Random.nextInt())
 
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
