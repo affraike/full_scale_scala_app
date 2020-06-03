@@ -1,0 +1,348 @@
+// Smart residential heating system 
+//
+// Author:  Anita Sant'Anna, 2013
+//
+// Run this example, view Plot, change weather profile and view plot. 
+//
+// This example models a smart residential heating system which
+// opperates dependent on weather and electricity costs (demand response program)
+
+// The heating system is composed of an electric heat pump, a hot water storage
+// and a forced convection system (fans).
+
+// The thermodynamic mode of the system is:
+//
+//   T_H'   = (K_H*(T_O - T_H) - Y_TM_H*(T_H - T_TM)) / (m_H*C_H);
+//   T_TM'  = (Q_HP_prime - Y_TM_H*(T_TM - T_H)) / (m_TM*C_TM);
+// 
+//   where:
+//     T_H: house temperature
+//     T_TM: boiler temperature
+//     T_O: outside temperature (according to Portland, Colorado Springs or Halmstad weather)
+//     K_H: heat transfer coefficient of the house insulation
+//     Y_TM_H: coefficient of heat transfer between boiler and house (due to fans)
+//     m_TM: mass of the water in the boiler
+//     m_H: mass of the air in the house
+//     Q_HP_prime: amount of heat the heat pump transfers to the boiler
+
+// The heat pump heats the water in the storage tank. The forced convection
+// system uses air fans to tranfer heat from the water storage tank to the 
+// house. 
+
+// The heat pump operates in three different modes: low, medium and high.
+// It tries to maintain the temperature of the water in the storage at 65 C.
+// It must also switch off during peak time-of-use (TUR) rates when the electricity
+// is the most expensive. The pump must wait 5 min between switching off and on again.
+// The heat pump control follows the following rules:
+//
+//   Q_HP_prime = 0        if (T_TM > 65 && count > 5) or (rate > 13 && count > 5) 
+//   Q_HP_prime = 10.5*0.3 if (T_TM > 64 && T_TM < 65)   
+//   Q_HP_prime = 10.5*0.6 if (T_TM > 62 && T_TM < 64)
+//   Q_HP_prime = 10.5     if (T_TM < 62)
+//
+//   where:
+//     Q_HP_prime: heat transfered from heat pump to boiler
+//     T_TM: temperature of water in the storage tank
+//     count: time since last switch off
+//     rate: time-of-use rate
+//
+// The total cost of electricity depends on time-of-use rates (TUR)
+// and the coefficient of performance (COP) of the heat pump
+// according to the following equation:
+//
+//  if Q_HP_prime = low    COP = -0.0002592*T_O^2 + 0.0358*T_O + 4.0181;
+//  if Q_HP_prime = medium COP = -0.0002592*T_O^2 + 0.0313*T_O + 3.6381;
+//  if Q_HP_prime = high   COP = -0.0002592*T_O^2 + 0.0268*T_O + 3.2581;
+//
+//  power=power + (Q_HP_prime/COP)*(1/60);          // [kW.h]
+//  cost=cost + (rate/100)*(Q_HP_prime/COP)*(1/60); // [dollars]
+// 
+//  where: 
+//    power: total power consumed by heat pump
+//    cost: total cost of electricity used
+//    rate: time-of-use rate
+//    T_O: outdoor temperature
+//
+// Time-of-use rates are defined as follows:
+//    rate = 13.266 from 06:00 to 10:00 and from 17:00 to 20:00 
+//    rate = 7.500  from 10:== to 17:00 and from 20:00 to 22:00 
+//    rate = 4.422  from 22:00 to 06:00 
+//
+// The forced convection system tries to maintain the temperature of
+// the house around 21 C. It follows the follwoing rules:
+//
+//   Y_TM_H = 0       if (T_H >= 21)
+//   Y_TM_H = 0.1303  if (T_H > 20 && T_H < 21) 
+//   Y_TM_H = 0.2605  if (T_H < 20)
+//   
+//   where:
+//     Y_TM_H: coefficient of heat transfer between boiler and house
+//     T_H: temperature of the house 
+//     
+//
+// weather profile for Portland Oregon, hourly averages for January 
+
+#semantics "2014 Optimized"
+model WeatherPortland() = 
+initially 
+  mode  =  "hour" , T_O  =  3 , tx   =  1 , tx'  =  1/3600 , i = 1 
+always
+  tx' = 1/3600 ,
+
+  match mode with [
+    "hour" ->     
+      if tx>=1 then
+        match i with [
+          1 -> T_O = 3 
+        | 2 -> T_O = 3 
+        | 3 -> T_O = 3
+        | 4 -> T_O = 3 
+        | 5 -> T_O = 3 
+        | 6 -> T_O = 3 
+        | 7 -> T_O = 3 
+        | 8 -> T_O = 3 
+        | 9 -> T_O = 3 
+        | 10 -> T_O = 4 
+        | 11 -> T_O = 5 
+        | 12 -> T_O = 5 
+        | 13 -> T_O = 6
+        | 14 -> T_O = 6 
+        | 15 -> T_O = 6 
+        | 16 -> T_O = 5 
+        | 17 -> T_O = 5 
+        | 18 -> T_O = 4 
+        | 19 -> T_O = 4 
+        | 20 -> T_O = 4 
+        | 21 -> T_O = 4 
+        | 22 -> T_O = 4 
+        | 23 -> T_O = 4 
+        | 24 -> T_O = 3 ]        
+      noelse,
+      i + = i + 1 ,
+      tx+ =0 ,
+      if i>24 then mode + = "NoMore" noelse
+  | "NoMore" -> ]
+
+// weather profile for Halmstad, Sweden, hourly averages for January 
+model WeatherHalmstad() = 
+initially 
+  mode  =  "hour" , T_O  =  0 , tx   =  1 , tx'  =  1/3600 , i = 1
+always
+  tx' = 1/3600 ,
+  match mode with [
+    "hour" ->
+      if tx>=1 then
+        match i with [
+          1 -> T_O = 0 
+        | 2 -> T_O = 0 
+        | 3 -> T_O = 0 
+        | 4 -> T_O = 0 
+        | 5 -> T_O = 0 
+        | 6 -> T_O = 0 
+        | 7 -> T_O = 0 
+        | 8 -> T_O = 0 
+        | 9 -> T_O = 0 
+        | 10 -> T_O = 0 
+        | 11 -> T_O = 1 
+        | 12 -> T_O = 1 
+        | 13 -> T_O = 1 
+        | 14 -> T_O = 1 
+        | 15 -> T_O = 1 
+        | 16 -> T_O = 1 
+        | 17 -> T_O = 1 
+        | 18 -> T_O = 1 
+        | 19 -> T_O = 0 
+        | 20 -> T_O = 0 
+        | 21 -> T_O = 0 
+        | 22 -> T_O = 0 
+        | 23 -> T_O = 0 
+        | 24 -> T_O = 0 ]
+      noelse ,
+      i + = i + 1 ,
+      tx+ =0 ,
+      if i>24 then mode + = "NoMore" noelse
+  | "NoMore" -> ]
+
+// weather profile for Colorado Springs, CO, hourly averages for January 
+model WeatherColoradoSprings() = 
+initially 
+  mode  =  "hour" , T_O  =  -5 , tx   =  1 , tx'  =  1/3600 , i = 1 
+always
+  tx' = 1/3600 ,
+  match mode with [
+    "hour" ->
+      if tx>=1 then
+        match i with [
+          1 -> T_O = -5 
+        | 2 -> T_O = -5 
+        | 3 -> T_O = -5 
+        | 4 -> T_O = -5 
+        | 5 -> T_O = -5 
+        | 6 -> T_O = -5 
+        | 7 -> T_O = -5 
+        | 8 -> T_O = -4 
+        | 9 -> T_O = -2 
+        | 10 -> T_O = 1 
+        | 11 -> T_O = 2 
+        | 12 -> T_O = 3 
+        | 13 -> T_O = 3 
+        | 14 -> T_O = 4 
+        | 15 -> T_O = 3 
+        | 16 -> T_O = 2 
+        | 17 -> T_O = 0 
+        | 18 -> T_O = -2 
+        | 19 -> T_O = -3 
+        | 20 -> T_O = -3 
+        | 21 -> T_O = -4 
+        | 22 -> T_O = -4 
+        | 23 -> T_O = -5 
+        | 24 -> T_O = -5 ]       
+      noelse ,
+      i + = i + 1 ,
+      tx+ =0 ,
+      if i>24 then mode + = "NoMore" noelse
+  | "NoMore" -> ]
+
+
+model CostAssessment() = 
+initially 
+  Q_HP_prime = 0 , COP = 0 , rate = 0 , power = 0 , cost = 0 , mode = "off" , T_O = 0 
+always
+  match mode with [
+    "off" ->    
+      COP=0 ,
+      power=power ,    // (kW.h)
+      cost=cost ,      // (cents)
+      if Q_HP_prime > 1 && Q_HP_prime < 3 then mode+ ="low"  
+      elseif Q_HP_prime > 4 && Q_HP_prime < 5 then mode+ ="medium"  
+      elseif Q_HP_prime > 6 && Q_HP_prime < 11 then mode+ ="high"  
+      noelse
+  
+
+  | "low" ->    
+      COP=-0.0002592*T_O^2 + 0.0358*T_O + 4.0181 ,
+      power=power + (Q_HP_prime/COP)*(1/60) ,          // (kW.h)
+      cost=cost + (rate/100)*(Q_HP_prime/COP)*(1/60) , // (dollars)
+      if Q_HP_prime > 1 && Q_HP_prime < 3 then mode+ ="low" 
+      elseif Q_HP_prime > 4 && Q_HP_prime < 5 then mode+ ="medium"  
+      elseif Q_HP_prime > 6 && Q_HP_prime < 11 then mode+ ="high" 
+      noelse
+  | "medium" ->    
+      COP=-0.0002592*T_O^2 + 0.0313*T_O + 3.6381 ,
+      power=power + (Q_HP_prime/COP)*(1/60) ,          // (kW.h)
+      cost=cost + (rate/100)*(Q_HP_prime/COP)*(1/60) , // (dollars)
+      if Q_HP_prime > 1 then mode+ ="on" noelse
+  | "high" ->    
+      COP=-0.0002592*T_O^2 + 0.0268*T_O + 3.2581 ,
+      power=power + (Q_HP_prime/COP)*(1/60) ,          // (kW.h)
+      cost=cost + (rate/100)*(Q_HP_prime/COP)*(1/60) , // (dollars)
+      if Q_HP_prime > 1 && Q_HP_prime < 3 then mode+ ="low"  
+      elseif Q_HP_prime > 4 && Q_HP_prime < 5 then mode+ ="medium" 
+      elseif Q_HP_prime > 6 && Q_HP_prime < 11 then mode+ ="high"
+      noelse ]
+
+// Time of use rates determine the cost of electricity depending on the hour of the day
+model TimeUseRate() = 
+initially 
+  rate = 4.422 , t = 0 , t' = 1/3600 , mode = "off_peak" 
+always
+  t'=1/3600 , //time in hours  
+  match mode with [
+    "off_peak" ->    
+      rate = 4.422 ,
+      if t > 6 && t < 10 then mode+ ="on_peak" noelse
+  | "mid_peak" ->    
+      rate = 7.5 ,
+      if t > 17 && t < 20 then mode+ ="on_peak" 
+      elseif t > 22 || t < 6 then mode+ ="off_peak" 
+      noelse
+  | "on_peak" -> 
+      rate = 13.266 ,
+      if (t > 10 && t < 17) || (t > 20 && t < 22) then
+        mode+ ="mid_peak" 
+      noelse ]
+
+
+model HeatPump() = 
+initially 
+  Q_HP_prime = 0 , T_TM = 65 , mode = "off" , rate = 0 , count = 0 
+always
+  count=count+1 ,
+  match mode with [
+    "high" ->    
+      Q_HP_prime = 10.5 ,
+      if (T_TM > 65 && count > 5) || (rate > 13 && count > 5) then
+        mode+ ="off" , count+ =0 
+      elseif T_TM > 64 && T_TM < 65 then mode+ ="low"  
+      elseif T_TM > 62 && T_TM < 64 then mode+ ="medium" 
+      noelse
+  | "medium" ->   
+      Q_HP_prime = 10.5*0.6 ,
+      if (T_TM > 65 && count > 5) || (rate > 13 && count > 5) then
+        mode+ ="off" , count+ =0 
+      elseif T_TM > 64 && T_TM < 65 then mode+ ="low" 
+      elseif T_TM < 62 then mode+ ="high" 
+      noelse
+  | "low" ->   
+      Q_HP_prime = 10.5*0.3 ,
+      if (T_TM > 66 && count > 5) || (rate > 13 && count > 5) then
+        mode+ ="off" , count+ =0
+      elseif T_TM > 62 && T_TM < 64 then mode+ ="medium"   
+      elseif T_TM < 62 then mode+ ="high"
+      noelse 
+  | "off" ->   
+      Q_HP_prime = 0 ,
+      if T_TM > 64 && T_TM < 65 && count>5 && rate < 13 then mode+ ="low"  
+      elseif T_TM > 62 && T_TM < 64 && count>5 && rate < 13 then mode+ ="medium" 
+      elseif T_TM < 62 && count>5 && rate < 13 then mode+ ="high" 
+      noelse ]
+
+model HeatingSystem(m_H, K_H, C_H, m_TM, C_TM) = 
+initially
+  Y_TM_H = 0 , T_H = 20 , T_H' = 0 , T_TM = 65 , T_TM' = 0 , T_O = 0 , Q_HP_prime = 0 ,
+  mode = "fan_off" 
+always
+  T_H'   = (K_H*(T_O - T_H) - Y_TM_H*(T_H - T_TM)) / (m_H*C_H) ,
+  T_TM'  = (Q_HP_prime - Y_TM_H*(T_TM - T_H)) / (m_TM*C_TM) ,
+
+  match mode with [
+    "fan_off" ->
+      Y_TM_H=0 ,
+      if T_H > 20 && T_H < 21 then mode+ ="fan_low" 
+      elseif T_H < 20 then mode+ ="fan_high"  
+      noelse
+  | "fan_high" -> 
+      Y_TM_H=0.2605 ,
+      if T_H > 20 && T_H < 21 then mode+ ="fan_low"  
+      elseif T_H >= 21 then mode+ ="fan_off" 
+      noelse
+  | "fan_low" ->   
+      Y_TM_H=0.1303 ,
+      if T_H < 20 then mode+ ="fan_high" 
+      elseif T_H >= 21 then mode+ ="fan_off"
+      noelse ]
+ 
+model Main(simulator) = 
+initially
+  pump    =  create HeatPump() ,
+  system  =  create HeatingSystem(913.218,0.1474,1.0050,624.525,4.136) ,
+  TUR  =  create TimeUseRate() ,   
+  // note you may change the weather profile to Portland or Colorado Springs
+  weather  =  create WeatherHalmstad() ,
+  assessment  =  create CostAssessment() ,
+  t = 0 , t' = 1/3600
+always
+
+  t'=1/3600 ,
+  // linking variables from different modeles
+  system.Q_HP_prime = pump.Q_HP_prime ,
+  pump.T_TM = system.T_TM ,
+  pump.rate = TUR.rate ,
+  system.T_O = weather.T_O ,
+  assessment.rate=TUR.rate ,
+  assessment.Q_HP_prime=pump.Q_HP_prime ,
+  assessment.T_O=weather.T_O ,
+  // simulation parameters
+  simulator.endTime+ =86400 ,
+  simulator.timeStep+ =60
+ 

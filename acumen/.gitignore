@@ -1,0 +1,39 @@
+# SBT #
+#######
+
+build/target/
+lib/
+lib_managed/
+project/boot/
+project/plugins/project/build.properties
+project/plugins/src_managed/sbt-proguard-plugin-0.0.5/ProguardProject.scala
+project/plugins/target/
+src/main/resources/acumen/version
+src/main/resources/acumen/build_id
+target/
+
+### IntelliJ IDEA ###
+.idea/
+
+# Eclipse #
+.classpath
+.cache
+.project
+.settings/
+bin/
+
+# Ensime #
+.ensime
+.ensime_lucene/
+
+# Other #
+benchmark-res/
+model*
+a.out
+???-*.out
+
+examples/tmp.acm
+examples/temp.acm
+examples/temp3.acm
+examples/temp2.acm
+examples/temp4.acm

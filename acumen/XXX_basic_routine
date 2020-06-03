@@ -1,0 +1,119 @@
+
+If you have direct access to the acumen-dev fork, the basic
+routine that you would typically follow to send your changes to
+the repository would be basically as described below.
+
+---------------------------------------------------------------------
+
+Summary:  ADD, COMMIT, PULL, then PUSH, in that order!
+ 
+          How to switch to another branch and get back, safely.
+
+          Note:  Repositories are described in the file XXX_main_workflow
+
+---------------------------------------------------------------------
+
+ADD
+
+In general, it's a good thing to check the status of your clone
+before doing anything with the rep.  That is done by typing:
+
+  git status
+
+Then, to stage the changes in your clone so that they can be committed
+to your shared rep on gitfhub, you execute the following command:
+
+  git add -u ./
+
+If you have added new files that you'd like to put in the rep, then 
+you need to add them one by one, as follows:
+
+  git add FILE
+
+If you have a new directory with some files in it, clean it up and
+make sure it only contains things that you want to committ, and then
+you can say
+
+  git add directory-name
+
+Do a "git status" again.  Any files you changes will be under "Changed
+but not updated", you should add those also assuming they are part of
+the updated arithmetic operators.  Everything that is to be committed
+should be under "Changes to be committed".  Make sure anything under
+another category is something you don't want to add.
+
+---------------------------------------------------------------------
+
+COMMIT
+
+What you just did is known as "staging" the changes. Now you can
+commit them.  Just use:
+
+  git commit
+
+and hopefully the emacs editor will come up.  Please type a useful
+commit message describing your changes.  As an innocent suggestion,
+since you don't have a working spell checker, maybe you can type the
+message in an editor that does spellcheck and copy and paste them into
+emacs.  (Just reformat them using ESC q).
+
+Now see you changes by doing a:
+
+  git log --stat
+
+which should show you commit.
+
+---------------------------------------------------------------------
+
+PULL
+
+If you need to get the latest version, just do this:
+
+  git pull --no-edit
+
+After doing a PULL, make sure the word "conflict" did not appear in
+the output of that operation.  If there is a conflict, talk to Kevin
+right away!  If there is no conflict, do "git status" and make sure
+there are no "C"onflict markers.
+
+---------------------------------------------------------------------
+
+PUSH
+
+Once that is done do a:
+
+  git push
+
+And let me know when that done and I will review the changes, and if
+there is a problem I will let you know.  If not I will merge them into
+acumen-e/devel-e.
+
+---------------------------------------------------------------------
+
+How to switch to another branch and get back, safely.
+
+If you have a prompt that indicates what branch you are on, this helps.
+Adam has a good .profile for doing that.
+
+The basic rountine for swtiching to another branch and getting back
+is as follows:
+
+  git stash                   ## Saves any unsaved work on initial/current branch
+  git checkout lohner         ## Here "lohner" is the name of the other branch
+  git ...                     ## Work as usual
+  git push -u origin lohner   ## Pushes just to that branch
+  git checkout master         ## Here "master" is what you worked on initially
+  git stash pop               ## Brings back any unsaved work on initial branch
+  git status                  ## Just a sanity check
+
+---------------------------------------------------------------------
+
+FETCH
+
+Downloads everything from the server, including all branches. It also lists
+the new branches that appears since the last fetch. Very good for working
+remotely.
+
+Note: At least intuitively, PULL = (FETCH; MERGE)
+
+---------------------------------------------------------------------

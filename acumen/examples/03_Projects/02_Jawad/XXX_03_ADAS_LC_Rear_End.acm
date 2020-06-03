@@ -1,0 +1,100 @@
+
+//Author: Jawad Masood
+//ID: A3
+//*****************Vehicle Mechanics************************************************//
+model VehicleMechanics(m1,m2,Fx,Fy,x0) = // Point mass 2D-dynamics
+initially 
+  x = x0 , 
+  x' = 5 , 
+  x'' =  0 , 
+  y = 1 , 
+  y' = 0 , 
+  y'' = 0 
+always
+  x'' = Fx/m1  , // Longitudenal Acceleration
+  y'' = -Fy/m2 - 10*y'  //Lateral Acceleration
+
+//*********************Machine Sensor********************************************// 
+model Sensor(x0,s0,r) = 
+initially
+  x  =  x0 ,
+  sx  =  s0
+always  
+  // Ideal sensing model  along X-direction. We can adjust this parameter according to our sensor range 
+
+//*********************ADAS********************************************// 
+model Control(s0,y0,vy0,Fy0,kP,kD) = //PD controller Open loop
+initially
+  s  =  s0 ,
+  y  =  y0 ,
+  y'  =  vy0 ,
+  Fy  =  Fy0 
+always 
+  if s<=3 then
+    Fy = kP*(5-y)+kD*(0.1-y') 
+  else 
+    Fy = 0 
+
+//**********************SIMULATOR*******************************************//
+model Main(simulator) = 
+initially 
+  mechanics  =  create VehicleMechanics(5,5,10,0,0) ,    
+  subject  =  create VehicleT((0,1,0),1,"car.obj") ,
+  target  =  create VehicleS((50,1,0),1,"car.obj") ,
+  environment  =  create Road() ,
+  sens  =  create Sensor(0,0,5) ,
+  controller  =  create Control(0,0,0,0,3,6) ,
+  _3DView  =  () 
+always
+  sens.x = mechanics.x ,
+  sens.sx = controller.s  ,
+  controller.y' = mechanics.y' ,
+  mechanics.Fy = controller.Fy ,
+  subject.p = (mechanics.x,mechanics.y,0) ,
+  _3DView = ((mechanics.x-10,mechanics.y,5),(mechanics.x,mechanics.y,0.5)) ,
+  simulator.endTime+ = 6 
+
+//**********************Environment*******************************************//
+model Road() = 
+initially
+  mode  =  "spawn" ,
+    _3D  =  () 
+always
+  _3D = (Box center=(0,0,-0.9144/2) size=(1000,3.9624,0.1) color=(0.3,0.3,0.3) rotation=(0,0,0), // Straignt Single Standard Road
+         Box center=(0,3.9624/2,-0.93/2) size=(1000,0.15,0.11) color=(255,255,255) rotation=(0,0,0), // left road side line
+         Box center=(0,-3.9624/2,-0.93/2) size=(1000,0.15,0.1) color=(255,255,255) rotation=(0,0,0), // right road side line
+         Box center=(0,0,-0.90/2) size=(3,0.15,0.1) color=(255,255,255) rotation=(0,0,0)), 
+  match mode with [
+    "spawn" ->
+      create Stripe(0, 33) ,
+      mode + = "persist" 
+  | "persist" -> ]
+
+model Stripe(xstart, stripesLeft) = 
+initially
+  _3D  =  (Box center=(xstart,0,-0.90/2) size=(3,0.15,0.1) color=(255,255,255) rotation=(0,0,0)) ,
+  mode =  "spawn"
+always
+  match mode with [
+    "spawn" ->
+      if stripesLeft > 0 then
+        create Stripe(xstart + 7.5, stripesLeft - 1) ,
+        mode + = "persist"
+      noelse
+  | "persist" -> ],
+  _3D = (Box center=(xstart,0,-0.90/2) size=(3,0.15,0.1) color=(255,255,255) rotation=(0,0,0))  // center lane
+
+
+//**************************VISUALIZATION***************************************//
+model VehicleT(p,d,name) = 
+initially
+  _3D  =  ()
+always      
+  _3D = (Obj center=p size=1 color=(1,1,1) rotation=(0,0,d*pi) content=name)
+
+model VehicleS(p,d,name) = 
+initially
+  _3D  =  ()
+always      
+  _3D = (Obj center=p size=1 color=(1,1,1) rotation=(0,0,d*pi) content=name) 
+ 
