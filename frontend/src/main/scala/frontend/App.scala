@@ -74,6 +74,7 @@ object App {
       span("Returned: ", child <-- returned.map(identity[String]))
     ),
     section(
+      h2("Communication Backend ↔ Acumen works ?"),
       label(
         cls:="switch",
         input(
@@ -287,16 +288,24 @@ object App {
           div(id := "upperBottomPane",
             div(id := "upperButtons",
               button(id := "playButton", cls := "tooltip fade", /*attr("data-title") := "Run Simulation",*/
-                span(id := "playIcon")
+                img(
+                    src:="./icons/play.png"
+                  )
               ),
               button(id := "pauseButton", cls := "tooltip fade", /*attr("data-title") := "Pause simulation",*/ display:= "none",
-                span(id := "pauseIcon")
+                img(
+                    src:="./icons/pause.png"
+                  )
               ),
               button(id := "stepButton", cls := "tooltip fade", /*attr("data-title") := "Compute one simulation step",*/
-                span(id := "stepIcon")
+                img(
+                    src:="./icons/step.png"
+                  )
               ),
               button(id := "stopButton", cls := "tooltip fade", /*attr("data-title") := "Stop simulation (cannot resume)",*/
-                span(id := "stopIcon")
+                img(
+                    src:="./icons/stop.png"
+                  )
               )
             ),
             div(id := "statusZone",
@@ -340,16 +349,24 @@ object App {
             div(id := "threedViews",
               div(id := "threedViewControls",
                 button(
-                  span(id := "defaultViewIcon")
+                  img(
+                    src:="./icons/defaultView.png"
+                  )
                 ),
                 button(
-                  span(id := "topViewIcon")
+                  img(
+                    src:="./icons/frontView.png"
+                  )
                 ),
                 button(
-                  span(id := "frontViewIcon")
+                  img(
+                    src:="./icons/rightView.png"
+                  )
                 ),
                 button(
-                  span(id := "rightViewIcon")
+                  img(
+                    src:="./icons/topView.png"
+                  )
                 )
               ),
               div(display:="flex", width:="calc(100% / 3)",
@@ -404,16 +421,24 @@ object App {
             div(id := "threedTimeControls",
               div(id := "threedControlButtons",
                 button(
-                  span(id := "playIcon")
+                  img(
+                    src:="./icons/play.png"
+                  )
                 ),
                 button(
-                  span(id := "stopIcon")
+                  img(
+                    src:="./icons/stop.png"
+                  )
                 ),
                 button(
-                  span(id := "slowerIcon")
+                  img(
+                    src:="./icons/slower.png"
+                  )
                 ),
                 button(
-                  span(id := "fasterIcon")
+                  img(
+                    src:="./icons/faster.png"
+                  )
                 )
               ),
               div(cls := "slidecontainer",

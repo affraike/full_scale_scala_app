@@ -310,20 +310,24 @@ margin-left: 5px;
 margin-right: 5px;
 }
 
-span#playIcon {
-background: url(/public/icons/play.png) no-repeat;
+span #playIcon {
+background-image: url(/public/icons/play.png);
+background-repeat: no-repeat;
 }
 
-span#pauseIcon {
-background: url(/public/icons/pause.png) no-repeat;
+span #pauseIcon {
+background-image: url(/public/icons/pause.png);
+background-repeat: no-repeat;
 }
 
-span#stepIcon {
-background: url(/public/icons/step.png) no-repeat;
+span #stepIcon {
+background-image: url(/public/icons/step.png);
+background-repeat: no-repeat;
 }
 
-span#stopIcon {
-background: url(/public/icons/stop.png) no-repeat;
+span #stopIcon {
+background-image: url(/public/icons/stop.png);
+background-repeat: no-repeat;
 }
 
 .tooltip {
@@ -452,7 +456,7 @@ background-color: #dddddd;
 }
 
 #threeDtab {
-display: none;
+display: flex;
 height: calc(100% - 70px);
 width: 100%;
 flex-direction: column;
@@ -547,34 +551,34 @@ display: flex;
 flex-direction: column;
 }
 
-span#defaultViewIcon {
+span #defaultViewIcon {
 background: url(/public/icons/defaultView.png);
 background-repeat: no-repeat;
 height: 55px;
 width: 55px;
 }
 
-span#frontViewIcon {
+span #frontViewIcon {
 background: url(/public/icons/frontView.png);
 background-repeat: no-repeat;
 }
 
-span#rightViewIcon {
+span #rightViewIcon {
 background: url(/public/icons/rightView.png);
 background-repeat: no-repeat;
 }
 
-span#topViewIcon {
+span #topViewIcon {
 background: url(/public/icons/topView.png);
 background-repeat: no-repeat;
 }
 
-span#slowerIcon {
+span #slowerIcon {
 background: url(/public/icons/slower.png);
 background-repeat: no-repeat;
 }
 
-span#fasterIcon {
+span #fasterIcon {
 background: url(/public/icons/faster.png);
 background-repeat: no-repeat;
 }
