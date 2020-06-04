@@ -197,7 +197,7 @@ display: block;
 background-color: #333;
 position: absolute;
 display: block;
-/*top: 0; */
+top: 0; 
 left: 100%;
 /*width: 100%; */
 min-width: 180px;
@@ -308,26 +308,6 @@ width: 22px;
 height: 22px;
 margin-left: 5px;
 margin-right: 5px;
-}
-
-span #playIcon {
-background-image: url(/public/icons/play.png);
-background-repeat: no-repeat;
-}
-
-span #pauseIcon {
-background-image: url(/public/icons/pause.png);
-background-repeat: no-repeat;
-}
-
-span #stepIcon {
-background-image: url(/public/icons/step.png);
-background-repeat: no-repeat;
-}
-
-span #stopIcon {
-background-image: url(/public/icons/stop.png);
-background-repeat: no-repeat;
 }
 
 .tooltip {
@@ -549,38 +529,6 @@ margin-left: 5px;
 #threedControls #timer3D {
 display: flex;
 flex-direction: column;
-}
-
-span #defaultViewIcon {
-background: url(/public/icons/defaultView.png);
-background-repeat: no-repeat;
-height: 55px;
-width: 55px;
-}
-
-span #frontViewIcon {
-background: url(/public/icons/frontView.png);
-background-repeat: no-repeat;
-}
-
-span #rightViewIcon {
-background: url(/public/icons/rightView.png);
-background-repeat: no-repeat;
-}
-
-span #topViewIcon {
-background: url(/public/icons/topView.png);
-background-repeat: no-repeat;
-}
-
-span #slowerIcon {
-background: url(/public/icons/slower.png);
-background-repeat: no-repeat;
-}
-
-span #fasterIcon {
-background: url(/public/icons/faster.png);
-background-repeat: no-repeat;
 }
 
 .slidecontainer {
