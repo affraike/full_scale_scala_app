@@ -39,7 +39,7 @@ object App {
       EventStream.fromFuture(
         boilerplate
           .response(asStringAlways)
-          .post(path("acumen").param("str", str.toString))
+          .post(path("com").param("str", str.toString))
           .send()
           .map(_.body)
       )
@@ -391,7 +391,14 @@ object App {
             span(id := "fileNameLabelText","[Untitled]")
           ),
           div(id := "codePanel",
-            div(id := "editor")
+            div(id := "editor", 
+              outline:= "currentcolor none medium",
+              overflowWrap:= "break-word",
+              overflowY:= "auto",
+              resize:= "vertical",
+              whiteSpace:= "pre-wrap",
+              contentEditable:=true
+            )
           ),
           div(id := "upperBottomPane",
             div(id := "upperButtons",
@@ -451,7 +458,6 @@ object App {
           div(id := "canvasPanel",
             div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
               span("3D panel not yet implemented"),
-              canvas(id:="canvasPlot3D", width:="200", height:="500")
             )
           ),
           div(id := "threedControls",
@@ -576,10 +582,19 @@ object App {
             button(`type` := "button", /*onClick := "getResponse('cancel');",*/"Cancel")
           )
         )
-      ),
-      //script(src := "./ace-noconflict/ace.js", `type` := "text/javascript", charset := "utf-8"),
-      //script(src := "./plotly.min.js"),
-      //script(src := "./acumen.js")
+      )
+    ),
+    script(
+      typ:= "module",
+      "import {CodeJar} from 'https://medv.io/codejar/codejar.js'"
+    ),
+    script(
+      """const highlight = (editor: HTMLElement) => {
+        const code = editor.textContent
+        // Do something with code and set html.
+        editor.innerHTML = code
+      }
+      let jar = CodeJar(document.getElementById("editor"), highlight)"""
     )
   )
 }
