@@ -3,14 +3,29 @@ import sbt.Keys.{resolvers, _}
 name := "Full Stack Scala in Heroku"
 
 version := "0.1"
-scalaVersion   := "2.11.6"
-scalaBinaryVersion  := "2.11.6"
+scalaVersion   := "2.12.10"
+scalaBinaryVersion  := "2.12.10"
 crossScalaVersions := Seq("2.12.10", "2.11.6")
 
 scalacOptions ++= Seq(
   "-deprecation",
   "-feature"
 )
+
+lazy val `shared` = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .disablePlugins(HerokuPlugin) // no need of Heroku for shared project
+  .settings(
+    scalaVersion := "2.12.10",
+    SharedSettings()
+  )
+  .jvmSettings(
+    SharedSettings.jvmSettings
+  )
+
+lazy val sharedJVM = `shared`.jvm
+lazy val sharedJS = `shared`.js
+
 
 lazy val acumen = (project in file("./acumen"))
   .settings(
@@ -46,6 +61,7 @@ lazy val `frontend` = (project in file("./frontend"))
     FrontendSettings(),
     SharedSettings()
   )
+  .dependsOn(sharedJS)
 
 addCommandAlias("dev", ";frontend/fastOptJS::startWebpackDevServer;~frontend/fastOptJS")
 
