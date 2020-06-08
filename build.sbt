@@ -27,8 +27,8 @@ lazy val `shared` = crossProject(JSPlatform, JVMPlatform)
 lazy val sharedJVM = `shared`.jvm
 lazy val sharedJS = `shared`.js
 
-
 lazy val acumen = (project in file("./acumen"))
+  //.enablePlugins(PlayScala)//if using playscala..or whatever
   .settings(
     name := "acumen",
     scalaVersion := "2.11.6",
@@ -37,8 +37,12 @@ lazy val acumen = (project in file("./acumen"))
       ("snapshots" at "http://oss.sonatype.org/content/repositories/snapshots").withAllowInsecureProtocol(true),
       ("releases"  at "http://oss.sonatype.org/content/repositories/releases").withAllowInsecureProtocol(true)
     ),
-      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+  //  BackendSettings(),
+   // BackendSettings.herokuSettings(),
+  //  libraryDependencies += guice // dependency injection
   )
+  //.dependsOn(sharedJVM)
 
 /** Backend server uses Play framework */
 lazy val `backend` = (project in file("./backend"))

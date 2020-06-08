@@ -59,6 +59,7 @@ trait testAcumenState{
   }
 
   def setStateAcumen(st: String): Unit = {
+    print("statement is set to? " + st)
     onoff = st
   }
 }
