@@ -2,6 +2,6 @@
 
 //addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.3")
 
-resolvers += "scct-github-repository" at "http://mtkopone.github.com/scct/maven-repo"
+resolvers += ("scct-github-repository" at "http://mtkopone.github.com/scct/maven-repo").withAllowInsecureProtocol(true)
 
 //addSbtPlugin("reaktor" % "sbt-scct" % "0.2-SNAPSHOT")

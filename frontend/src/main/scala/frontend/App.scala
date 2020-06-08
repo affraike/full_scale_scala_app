@@ -391,13 +391,14 @@ object App {
             span(id := "fileNameLabelText","[Untitled]")
           ),
           div(id := "codePanel",
-            div(id := "editor", 
+            div(cls := "editor",
+              spellCheck:=false,
               outline:= "currentcolor none medium",
               overflowWrap:= "break-word",
               overflowY:= "auto",
               resize:= "vertical",
               whiteSpace:= "pre-wrap",
-              contentEditable:=true
+              contentEditable:=true,
             )
           ),
           div(id := "upperBottomPane",
@@ -583,18 +584,6 @@ object App {
           )
         )
       )
-    ),
-    script(
-      typ:= "module",
-      "import {CodeJar} from 'https://medv.io/codejar/codejar.js'"
-    ),
-    script(
-      """const highlight = (editor: HTMLElement) => {
-        const code = editor.textContent
-        // Do something with code and set html.
-        editor.innerHTML = code
-      }
-      let jar = CodeJar(document.getElementById("editor"), highlight)"""
     )
   )
 }
