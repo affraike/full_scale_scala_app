@@ -1,4 +1,5 @@
 import sbt.Keys.{resolvers, _}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 name := "Full Stack Scala in Heroku"
 
