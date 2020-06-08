@@ -391,7 +391,7 @@ object App {
             span(id := "fileNameLabelText","[Untitled]")
           ),
           div(id := "codePanel",
-            div(cls := "editor",
+            div(id := "editor",
               spellCheck:=false,
               outline:= "currentcolor none medium",
               overflowWrap:= "break-word",
