@@ -63,6 +63,7 @@ lazy val `frontend` = (project in file("./frontend"))
   .enablePlugins(ScalaJSBundlerPlugin)
   .settings(
     scalaVersion := "2.12.10",
+    resolvers += "amateras-repo" at "http://amateras.sourceforge.jp/mvn/",
     FrontendSettings(),
     SharedSettings()
   )

@@ -11,7 +11,9 @@ import io.circe.parser.decode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 import scala.util.{Random, Success, Try}
+import com.scalawarrior.scalajs.ace._
 
 object App {
 
@@ -53,26 +55,16 @@ object App {
     }
   }
 
+  val clickObserver = Observer[dom.MouseEvent](_ => newEditor("editor"))
+
+  def newEditor(el: String): Unit = {
+    val editor = ace.edit("editor")
+    editor.setTheme("ace/theme/monokai")
+    editor.getSession().setMode("ace/mode/acumen")
+  }
+
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
-    h1("Frontend works!"),
-    section(
-      h2("Backend works?"),
-      p(child <-- EventStream.fromFuture(boilerplate.response(asStringAlways).get(path("hello")).send().map(_.body)))
-    ),
-    section(
-      h2("Post to backend to find out!"),
-      input(
-        value <-- numberToPost.signal.map(_.toString),
-        inContext(
-          thisElem =>
-            onInput.mapTo(Try(thisElem.ref.value.toInt)).collect { case Success(nbr) => nbr } --> numberToPost.writer
-        )
-      ),
-      button("Click me to check!", onClick.mapTo(numberToPost.now) --> postBus.writer),
-      br(),
-      span("Returned: ", child <-- returned.map(identity[String]))
-    ),
     section(
       h2("Communication Backend ↔ Acumen works ?"),
       label(
@@ -108,7 +100,9 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","File"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "newAction","New"),
+              button(`type` := "button", id := "newAction","New",
+                onClick --> clickObserver
+              ),
               button(`type` := "button", id := "openAction","Open"),
               button(`type` := "button", id := "saveAction","Save"),
               button(`type` := "button", id := "saveAsAction","Save as"),
@@ -391,15 +385,7 @@ object App {
             span(id := "fileNameLabelText","[Untitled]")
           ),
           div(id := "codePanel",
-            div(id := "editor",
-              spellCheck:=false,
-              outline:= "currentcolor none medium",
-              overflowWrap:= "break-word",
-              overflowY:= "auto",
-              resize:= "vertical",
-              whiteSpace:= "pre-wrap",
-              contentEditable:=true,
-            )
+            div(id := "editor")
           ),
           div(id := "upperBottomPane",
             div(id := "upperButtons",
@@ -584,6 +570,10 @@ object App {
           )
         )
       )
+    ),
+    script(
+      typ:="text/javascript",
+      src:="./ace-noconflict/ace.js"
     )
   )
 }

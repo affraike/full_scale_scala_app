@@ -28,7 +28,9 @@ object FrontendSettings {
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     requireJsDomEnv in Test := true,
     // laminar
-    libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2"
+    libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2",
+    //ace
+    libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.4"
   )
 
 }
