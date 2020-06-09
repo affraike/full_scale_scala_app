@@ -5,6 +5,7 @@ import com.raquo.laminar.nodes.ReactiveHtmlElement
 import org.scalajs.dom.html
 import HttpClient._
 import org.scalajs.dom
+import org.scalajs.dom.{MouseEvent}
 import sttp.client._
 import io.circe.generic.auto._
 import io.circe.parser.decode
@@ -20,21 +21,8 @@ object App {
   private val css = AppCSS
   dom.console.log(css.asInstanceOf[js.Object])
 
-  val postBus: EventBus[Int] = new EventBus()
+  //Implement backend/acumen communication
   val postBus2: EventBus[String] = new EventBus()
-
-  val numberToPost: Var[Int] = Var(0)
-
-  val returned: EventStream[String] = postBus.events.flatMap(
-    nbr =>
-      EventStream.fromFuture(
-        boilerplate
-          .response(asStringAlways)
-          .post(path("hello").param("nbr", nbr.toString))
-          .send()
-          .map(_.body)
-      )
-  )
 
   val returned2: EventStream[String] = postBus2.events.flatMap(
     str =>
@@ -55,14 +43,47 @@ object App {
     }
   }
 
-  val clickObserver = Observer[dom.MouseEvent](_ => newEditor("editor"))
+  //Handle all Buttons in the API
+  val clickBus = new EventBus[dom.MouseEvent]
+  val coordinateStream: EventStream[String] = clickBus.events.map(ev => handleClickEvents(ev.srcElement.id))
 
-  def newEditor(el: String): Unit = {
+  def handleClickEvents(region: String): String = {
+    region match {
+      case "newAction" => newEditor()
+      case "cutAction" => cut()
+      case "copyAction" => copy()
+      case "pasteAction" => paste()
+    }
+
+    return region
+  }
+
+  def newEditor(): Unit = {
     val editor = ace.edit("editor")
     editor.setTheme("ace/theme/monokai")
     editor.getSession().setMode("ace/mode/acumen")
   }
 
+  def cut(): Unit = {
+    val editor = ace.edit("editor")
+    editor.focus()
+    dom.document.execCommand("cut")
+  }
+
+  def copy(): Unit = {
+    val editor = ace.edit("editor")
+    editor.focus()
+    dom.document.execCommand("copy")
+  }
+
+  def paste(): Unit = {
+    dom.console.log("yo!")
+    val editor = ace.edit("editor")
+    editor.focus()
+    dom.document.execCommand("paste")
+  }
+
+  // Handle API rendering
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
     section(
@@ -83,6 +104,7 @@ object App {
       ),
       span("Returned: ", child <-- returned2.map(identity[String]))
     ),
+    p("Button: ", child <-- coordinateStream.map(identity[String])),
     div(id := "loader",
       div(
         div(
@@ -101,7 +123,7 @@ object App {
             a(cls := "dropbtn","File"),
             div(cls := "dropdown-content",
               button(`type` := "button", id := "newAction","New",
-                onClick --> clickObserver
+                onClick --> clickBus.writer
               ),
               button(`type` := "button", id := "openAction","Open"),
               button(`type` := "button", id := "saveAction","Save"),
@@ -116,9 +138,15 @@ object App {
               button(`type` := "button", id := "undoAction", disabled := true,"Undo"),
               button(`type` := "button", id := "redoAction", disabled := true,"Redo"),
               hr(),
-              button(`type` := "button", id := "cutAction","Cut"),
-              button(`type` := "button", id := "copyAction","Copy"),
-              button(`type` := "button", id := "pasteAction","Paste"),
+              button(`type` := "button", id := "cutAction","Cut",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "copyAction","Copy",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "pasteAction","Paste",
+                onClick --> clickBus.writer
+              ),
               hr(),
               button(`type` := "button", id := "incIndentAction","Increase Indentation"),
               button(`type` := "button", id := "decIndentAction","Decrease Indentation"),
