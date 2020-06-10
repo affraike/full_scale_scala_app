@@ -50,9 +50,25 @@ object App {
   def handleClickEvents(region: String): String = {
     region match {
       case "newAction" => newEditor()
+      case "undoAction" => undo()
+      case "redoAction" => redo()
       case "cutAction" => cut()
       case "copyAction" => copy()
       case "pasteAction" => paste()
+      case "incIndentAction" => incindent()
+      case "decIndentAction" => decindent()
+      case "selectAllAction" => selectall()
+      case "showFind" => find()
+      case "dreamTheme" => theme("dreamweaver")
+      case "textMateTheme" => theme("textMate")
+      case "ambianceTheme" => theme("ambiance")
+      case "draculaTheme" => theme("dracula")
+      case "lineNumbers" => linenumbers()
+      case "consoleButton" => changeActiveAera("ctab", region)
+      case "browserButton" => changeActiveAera("ctab", region)
+      case "plotButton" => changeActiveAera("vtab", region)
+      case "traceButton" => changeActiveAera("vtab", region)
+      case "threeDButton" => changeActiveAera("vtab", region)
     }
 
     return region
@@ -60,8 +76,22 @@ object App {
 
   def newEditor(): Unit = {
     val editor = ace.edit("editor")
-    editor.setTheme("ace/theme/monokai")
+    editor.setTheme("ace/theme/dracula")
     editor.getSession().setMode("ace/mode/acumen")
+  }
+
+  def undo(): Unit = {
+    val editor = ace.edit("editor")
+    if (editor.session.getUndoManager().hasUndo()){
+      editor.undo()
+    }
+  }
+
+  def redo(): Unit = {
+    val editor = ace.edit("editor")
+    if (editor.session.getUndoManager().hasRedo()){
+      editor.redo()
+    }
   }
 
   def cut(): Unit = {
@@ -77,10 +107,85 @@ object App {
   }
 
   def paste(): Unit = {
-    dom.console.log("yo!")
     val editor = ace.edit("editor")
     editor.focus()
     dom.document.execCommand("paste")
+  }
+
+  def incindent(): Unit = {
+    val editor = ace.edit("editor")
+    editor.indent()
+  }
+
+  def decindent(): Unit = {
+    val editor = ace.edit("editor")
+    editor.blockOutdent()
+  }
+
+  def selectall(): Unit = {
+    val editor = ace.edit("editor")
+    editor.selectAll()
+  }
+
+  def find(): Unit = {
+    val editor = ace.edit("editor")
+    editor.execCommand("find")
+  }
+
+  def theme(th: String): Unit = {
+    val editor = ace.edit("editor")
+    editor.setTheme("ace/theme/" + th)
+  }
+
+  def linenumbers(): Unit = {
+    val editor = ace.edit("editor")
+    if (dom.document.getElementById("lineNumbers").asInstanceOf[html.Input].checked == true) { editor.renderer.setShowGutter(true)}
+    else { editor.renderer.setShowGutter(false)}
+  }
+
+  def changeActiveAera(area: String, subarea: String) : Unit = {
+    area match{
+      case "ctab" => {
+        subarea match {
+          case "consoleButton" => {
+            dom.document.getElementById("browserButton").asInstanceOf[html.Button].className = "ctablinks"
+            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
+          }
+          case "browserButton" => {
+            dom.document.getElementById("consoleButton").asInstanceOf[html.Button].className = "ctablinks"
+            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
+          }
+        }
+      }
+      case "vtab" => {
+        subarea match {
+          case "plotButton" => {
+            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("traceButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById("threeDButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
+            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "block"
+          }
+          case "traceButton" => {
+            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("plotButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById("threeDButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
+            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "block"
+          }
+          case "threeDButton" => {
+            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "none"
+            dom.document.getElementById("plotButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById("traceButton").asInstanceOf[html.Button].className = "vtablinks"
+            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
+            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "block"
+          }
+        }
+      }
+    }
   }
 
   // Handle API rendering
@@ -135,8 +240,12 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Edit"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "undoAction", disabled := true,"Undo"),
-              button(`type` := "button", id := "redoAction", disabled := true,"Redo"),
+              button(`type` := "button", id := "undoAction","Undo",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "redoAction","Redo",
+                onClick --> clickBus.writer
+              ),
               hr(),
               button(`type` := "button", id := "cutAction","Cut",
                 onClick --> clickBus.writer
@@ -144,26 +253,33 @@ object App {
               button(`type` := "button", id := "copyAction","Copy",
                 onClick --> clickBus.writer
               ),
-              button(`type` := "button", id := "pasteAction","Paste",
+              button(`type` := "button", id := "pasteAction", disabled:=true, "Paste",
                 onClick --> clickBus.writer
               ),
               hr(),
-              button(`type` := "button", id := "incIndentAction","Increase Indentation"),
-              button(`type` := "button", id := "decIndentAction","Decrease Indentation"),
+              button(`type` := "button", id := "incIndentAction","Increase Indentation",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "decIndentAction","Decrease Indentation",
+                onClick --> clickBus.writer
+              ),
               hr(),
-              button(`type` := "button", id := "selectAllAction","Select All"),
-              label(
-                input(`type` := "checkbox", id := "showFind"),
-                span("Find")
+              button(`type` := "button", id := "selectAllAction","Select All",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "showFind","Find",
+                onClick --> clickBus.writer
               )
             )
           ),
           li(cls := "navMenuItem",
             a(cls := "dropbtn","View"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "increaseFontSize","Enlarge Font"),
-              button(`type` := "button", id := "reduceFontSize","Reduce Font"),
-              button(`type` := "button", id := "resetFontSize","Reset Font"),
+              button(`type` := "button", id := "increaseFontSize", disabled:=true,"Enlarge Font",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "reduceFontSize", disabled:=true,"Reduce Font"),
+              button(`type` := "button", id := "resetFontSize", disabled:=true,"Reset Font"),
               div(cls := "vertical-nav",
                 div(
                   display:="flex",
@@ -173,25 +289,25 @@ object App {
                 ul(cls := "sub-menu", id := "fontMenu",
                   li(
                     label(
-                    input(`type` := "radio", name := "font", selected := false),
+                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
                     "Monospaced"
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", selected := false),
+                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
                     "Consolas"
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", selected := false),
+                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
                     "Courier View"
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", selected := false),
+                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
                     "Lucida Console"
                     )
                   )
@@ -205,13 +321,43 @@ object App {
                   span(marginRight:="auto","Theme"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "themeMenu")
+                ul(cls := "sub-menu", id := "themeMenu",
+                  li(
+                    label(
+                    input(`type` := "radio", name := "font", id:="dreamTheme", selected := false),
+                    "dreamweaver",
+                    onClick --> clickBus.writer
+                    )
+                  ),
+                  li(
+                    label(
+                    input(`type` := "radio", name := "font", id:="textMateTheme", selected := false),
+                    "textMate",
+                    onClick --> clickBus.writer
+                    )
+                  ),
+                  li(
+                    label(
+                    input(`type` := "radio", name := "font", id:="ambianceTheme", selected := false),
+                    "ambiance",
+                    onClick --> clickBus.writer
+                    )
+                  ),
+                  li(
+                    label(
+                    input(`type` := "radio", name := "font", id:="draculaTheme", selected := true),
+                    "dracula",
+                    onClick --> clickBus.writer
+                    )
+                  )
+                )
               ),
               label(
-                input(`type` := "checkbox", id := "lineNumbers", checked := false),
+                input(`type` := "checkbox", id := "lineNumbers", checked := true,
+                  onClick --> clickBus.writer
+                ),
                 span("Line Numbers")
-              ),
-              button(`type` := "button", disabled := true,"Aspect Ratio")
+              )
             )
           ),
           li(cls := "navMenuItem",
@@ -446,8 +592,12 @@ object App {
         ),
         div(id := "lowerPane",
           div(cls := "tabs",
-            button(id := "consoleButton", cls := "ctablinks active","Console"),
-            button(id := "browserButton", cls := "ctablinks","Browser")
+            button(id := "consoleButton", cls := "ctablinks active","Console",
+              onClick --> clickBus.writer
+            ),
+            button(id := "browserButton", cls := "ctablinks","Browser",
+              onClick --> clickBus.writer
+            )
           ),
           div(id := "consoleTab", cls := "ctabcontent", height:="calc(100% - 70px)", overflow:="auto",
             ul(id := "consoleAreaList")
@@ -459,17 +609,23 @@ object App {
       ),
       div(id := "viewsPane",
         div(cls := "views",
-          button(id := "plotButton", cls := "vtablinks active","Plot"),
-          button(id := "traceButton", cls := "vtablinks","Table"),
-          button(id := "threeDButton", cls := "vtablinks","_3D")
+          button(id := "plotButton", cls := "vtablinks active","Plot",
+            onClick --> clickBus.writer
+          ),
+          button(id := "traceButton", cls := "vtablinks","Table",
+            onClick --> clickBus.writer
+          ),
+          button(id := "threeDButton", cls := "vtablinks","_3D",
+            onClick --> clickBus.writer
+          )
         ),
-        div(id := "plotTab", cls := "vtabcontent"),
-        div(id := "traceTab", cls := "vtabcontent",
+        div(id := "plotTab", cls := "vtabcontent", display:= "none"),
+        div(id := "traceTab", cls := "vtabcontent", display:= "none",
           div(overflow:="auto",
             table(id := "traceTable")
           )
         ),
-        div(id := "threeDtab", cls := "vtabcontent",
+        div(id := "threeDTab", cls := "vtabcontent", display:= "none",
           div(id := "canvasPanel",
             div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
               span("3D panel not yet implemented"),
