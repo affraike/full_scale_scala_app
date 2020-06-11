@@ -15,6 +15,8 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.{Random, Success, Try}
 import com.scalawarrior.scalajs.ace._
+import java.lang.Float.parseFloat
+import scala.util.{Try,Success,Failure}
 
 object App {
 
@@ -59,6 +61,13 @@ object App {
       case "decIndentAction" => decindent()
       case "selectAllAction" => selectall()
       case "showFind" => find()
+      case "increaseFontSize" => changefontsize(2)
+      case "reduceFontSize" => changefontsize(-2)
+      case "resetFontSize" => resetfontsize()
+      case "monospaced" => font("Monospaced")
+      case "consolas" => font("Consolas")
+      case "courierView" => font("Courier View")
+      case "lucidaConsole" => font("Lucida Console")
       case "dreamTheme" => theme("dreamweaver")
       case "textMateTheme" => theme("textMate")
       case "ambianceTheme" => theme("ambiance")
@@ -141,6 +150,28 @@ object App {
     val editor = ace.edit("editor")
     if (dom.document.getElementById("lineNumbers").asInstanceOf[html.Input].checked == true) { editor.renderer.setShowGutter(true)}
     else { editor.renderer.setShowGutter(false)}
+  }
+
+  def changefontsize(value: Float): Unit = {
+    val style = dom.window.getComputedStyle(dom.document.getElementById("editor").asInstanceOf[html.Div], null).getPropertyValue("font-size")
+    var currentSize = 0.0
+    style.length match {
+      case 4 => {currentSize = parseFloat(style.take(2))}
+      case 3 => {currentSize = parseFloat(style.take(1))}
+    }
+    val newFontSize = currentSize + value + "px"
+    dom.console.log(currentSize)
+    val editor = ace.edit("editor")
+    editor.setFontSize(newFontSize)
+  }
+
+  def resetfontsize(): Unit = {
+    val editor = ace.edit("editor")
+    editor.setFontSize("12px")
+  }
+
+  def font(fontFamily: String): Unit = {
+    dom.document.getElementById("editor").asInstanceOf[html.Div].style.fontFamily = fontFamily
   }
 
   def changeActiveAera(area: String, subarea: String) : Unit = {
@@ -275,11 +306,15 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","View"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "increaseFontSize", disabled:=true,"Enlarge Font",
+              button(`type` := "button", id := "increaseFontSize","Enlarge Font",
                 onClick --> clickBus.writer
               ),
-              button(`type` := "button", id := "reduceFontSize", disabled:=true,"Reduce Font"),
-              button(`type` := "button", id := "resetFontSize", disabled:=true,"Reset Font"),
+              button(`type` := "button", id := "reduceFontSize","Reduce Font",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "resetFontSize","Reset Font",
+                onClick --> clickBus.writer
+              ),
               div(cls := "vertical-nav",
                 div(
                   display:="flex",
@@ -289,26 +324,30 @@ object App {
                 ul(cls := "sub-menu", id := "fontMenu",
                   li(
                     label(
-                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
-                    "Monospaced"
+                    input(`type` := "radio", name := "font", id:="monospaced", checked := false),
+                    "Monospaced",
+                    onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
-                    "Consolas"
+                    input(`type` := "radio", name := "font", id:="consolas", checked := true),
+                    "Consolas",
+                    onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
-                    "Courier View"
+                    input(`type` := "radio", name := "font", id:="courierView", checked:= false),
+                    "Courier View",
+                    onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", disabled:=true, selected := false),
-                    "Lucida Console"
+                    input(`type` := "radio", name := "font", id:="lucidaConsole", checked := false),
+                    "Lucida Console",
+                    onClick --> clickBus.writer
                     )
                   )
                 )
@@ -324,28 +363,28 @@ object App {
                 ul(cls := "sub-menu", id := "themeMenu",
                   li(
                     label(
-                    input(`type` := "radio", name := "font", id:="dreamTheme", selected := false),
+                    input(`type` := "radio", name := "font", id:="dreamTheme", checked := false),
                     "dreamweaver",
                     onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", id:="textMateTheme", selected := false),
+                    input(`type` := "radio", name := "font", id:="textMateTheme", checked := false),
                     "textMate",
                     onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", id:="ambianceTheme", selected := false),
+                    input(`type` := "radio", name := "font", id:="ambianceTheme", checked := false),
                     "ambiance",
                     onClick --> clickBus.writer
                     )
                   ),
                   li(
                     label(
-                    input(`type` := "radio", name := "font", id:="draculaTheme", selected := true),
+                    input(`type` := "radio", name := "font", id:="draculaTheme", checked := true),
                     "dracula",
                     onClick --> clickBus.writer
                     )
@@ -559,7 +598,7 @@ object App {
             span(id := "fileNameLabelText","[Untitled]")
           ),
           div(id := "codePanel",
-            div(id := "editor")
+            div(id := "editor", fontSize:= "12px", fontFamily:="Consolas")
           ),
           div(id := "upperBottomPane",
             div(id := "upperButtons",
