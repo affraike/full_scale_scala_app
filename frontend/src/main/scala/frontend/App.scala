@@ -51,7 +51,10 @@ object App {
 
   def handleClickEvents(region: String): String = {
     region match {
-      case "newAction" => newEditor()
+      case "saveAndContinueN" => permissionGranted(true, "save")
+      case "discardAndContinueN" => permissionGranted(true, "discard")
+      case "cancelAndGoBackN" => permissionGranted(false, "")
+      case "newAction" => confirmAction("new")
       case "undoAction" => undo()
       case "redoAction" => redo()
       case "cutAction" => cut()
@@ -89,10 +92,46 @@ object App {
     return region
   }
 
+  def closeEditor(): Unit = {
+    val editor = ace.edit("editor")
+    editor.destroy()
+  }
+
   def newEditor(): Unit = {
     val editor = ace.edit("editor")
+    editor.setValue("")
     editor.setTheme("ace/theme/dracula")
     editor.getSession().setMode("ace/mode/acumen")
+  }
+
+  def confirmAction(action: String): Unit = {
+    action match {
+      case "new" => {
+        dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "block"
+      }
+      case "open" => {}
+    }
+  }
+
+  def permissionGranted(perm: Boolean, choice: String): Unit = {
+    perm match {
+      case true => {
+        choice match {
+          case "save" => {
+            dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
+            // TODO : save the current file
+            closeEditor()
+            newEditor()
+          }
+          case "discard" => {
+            dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
+            closeEditor
+            newEditor()
+          }
+        }
+      }
+      case false => {dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"}
+    }
   }
 
   def undo(): Unit = {
@@ -856,19 +895,43 @@ object App {
           )
         )
       ),
-      div(id := "promptPanel", display:="none",
+      div(id := "promptPanelNew", display:="none",
         div(id := "dialog",
           div(cls := "dlg-header",
             span(id := "dlgHeader","Warning!")
           ),
           div(cls := "dlg-body",
+            span("Creating new file :"),
             span("You have changed this file since the last time it was saved."),
             span("Please confirm your desired action.")
           ),
           div(cls := "dlg-options",
-            button(`type` := "button", id := "saveAndContinue","Save and continue"),
-            button(`type` := "button", id := "discardAndContinue","Discard and continue"),
-            button(`type` := "button", /*onClick := "getResponse('cancel');",*/"Cancel")
+            button(`type` := "button", id := "saveAndContinueN","Save and continue",
+              onClick --> clickBus.writer
+            ),
+            button(`type` := "button", id := "discardAndContinueN","Discard and continue",
+              onClick --> clickBus.writer
+            ),
+            button(`type` := "button", id := "cancelAndGoBackN", "Cancel",
+              onClick --> clickBus.writer
+            )
+          )
+        )
+      ),
+      div(id := "promptPanelOpen", display:="none",
+        div(id := "dialog",
+          div(cls := "dlg-header",
+            span(id := "dlgHeader","Warning!")
+          ),
+          div(cls := "dlg-body",
+          span("Opening file :"),
+            span("You have changed this file since the last time it was saved."),
+            span("Please confirm your desired action.")
+          ),
+          div(cls := "dlg-options",
+            button(`type` := "button", id := "saveAndContinueO","Save and continue"),
+            button(`type` := "button", id := "discardAndContinueO","Discard and continue"),
+            button(`type` := "button", id := "cancelAndGoBackO", "Cancel")
           )
         )
       )
