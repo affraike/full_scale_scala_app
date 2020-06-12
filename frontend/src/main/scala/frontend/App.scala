@@ -78,6 +78,12 @@ object App {
       case "plotButton" => changeActiveAera("vtab", region)
       case "traceButton" => changeActiveAera("vtab", region)
       case "threeDButton" => changeActiveAera("vtab", region)
+      case "playButtonImg" | "playMenuButton" => playpause("play")
+      case "pauseButtonImg" | "pauseMenuButton" => playpause("pause")
+      case "stepButtonImg" | "stepMenuButton" => playpause("step")
+      case "stopButtonImg" | "stopMenuButton" => playpause("stop")
+      case "startServer" => startstopserver("start")
+      case "stopServer" => startstopserver("stop")
     }
 
     return region
@@ -215,6 +221,59 @@ object App {
             dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "block"
           }
         }
+      }
+    }
+  }
+
+  def playpause(state: String): Unit = {
+    state match {
+      case "play" => {
+        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("stopButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "block"
+        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "block"
+      }
+      case "pause" => {
+        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "block"
+        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "block"
+      }
+      case "step" => {
+        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = false
+      }
+      case "stop" => {
+        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "none"
+        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("stopButton").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "block"
+        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "block"
+      }
+    }
+  }
+
+  def startstopserver(state: String): Unit = {
+    state match {
+      case "start" => {
+        dom.document.getElementById("startServer").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("stopServer").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("resetDevice").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("serverLink").asInstanceOf[html.Button].disabled = false
+      }
+      case "stop" => {
+        dom.document.getElementById("startServer").asInstanceOf[html.Button].disabled = false
+        dom.document.getElementById("stopServer").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("resetDevice").asInstanceOf[html.Button].disabled = true
+        dom.document.getElementById("serverLink").asInstanceOf[html.Button].disabled = true
       }
     }
   }
@@ -446,10 +505,18 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Model"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "playMenuButton","Run"),
-              button(`type` := "button", id := "pauseMenuButton", display:="none","Pause"),
-              button(`type` := "button", id := "stepMenuButton","Step"),
-              button(`type` := "button", id := "stopMenuButton", disabled := true,"Stop")
+              button(`type` := "button", id := "playMenuButton","Run",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "pauseMenuButton", display:="none","Pause",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "stepMenuButton","Step",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "stopMenuButton", disabled := true,"Stop",
+                onClick --> clickBus.writer
+              )
             )
           ),
           li(cls := "navMenuItem",
@@ -572,8 +639,12 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Devices"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "startServer","Start Server"),
-              button(`type` := "button", id := "stopServer", disabled := true,"Stop Server"),
+              button(`type` := "button", id := "startServer","Start Server",
+                onClick --> clickBus.writer
+              ),
+              button(`type` := "button", id := "stopServer", disabled := true,"Stop Server",
+                onClick --> clickBus.writer
+              ),
               button(`type` := "button", id := "resetDevice", disabled := true,"Reset Device"),
               button(`type` := "button", id := "serverLink", disabled := true,"Server Link")
             )
@@ -602,25 +673,33 @@ object App {
           ),
           div(id := "upperBottomPane",
             div(id := "upperButtons",
-              button(id := "playButton", cls := "tooltip fade", /*attr("data-title") := "Run Simulation",*/
+              button(id := "playButton", cls := "tooltip fade", name:= "Run Simulation",
                 img(
-                    src:="./icons/play.png"
+                    src:="./icons/play.png",
+                    id := "playButtonImg",
+                    onClick --> clickBus.writer
+                )
+              ),
+              button(id := "pauseButton", cls := "tooltip fade", name := "Pause simulation", display:= "none",
+                img(
+                    src:="./icons/pause.png",
+                    id := "pauseButtonImg",
+                    onClick --> clickBus.writer
+                )
+              ),
+              button(id := "stepButton", cls := "tooltip fade", name := "Compute one simulation step",
+                img(
+                    src:="./icons/step.png",
+                    id := "stepButtonImg",
+                    onClick --> clickBus.writer
                   )
               ),
-              button(id := "pauseButton", cls := "tooltip fade", /*attr("data-title") := "Pause simulation",*/ display:= "none",
+              button(id := "stopButton", cls := "tooltip fade", name := "Stop simulation (cannot resume)", disabled:=true,
                 img(
-                    src:="./icons/pause.png"
-                  )
-              ),
-              button(id := "stepButton", cls := "tooltip fade", /*attr("data-title") := "Compute one simulation step",*/
-                img(
-                    src:="./icons/step.png"
-                  )
-              ),
-              button(id := "stopButton", cls := "tooltip fade", /*attr("data-title") := "Stop simulation (cannot resume)",*/
-                img(
-                    src:="./icons/stop.png"
-                  )
+                    src:="./icons/stop.png",
+                    id := "stopButtonImg",
+                    onClick --> clickBus.writer
+                )
               )
             ),
             div(id := "statusZone",
