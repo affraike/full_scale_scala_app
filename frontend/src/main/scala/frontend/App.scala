@@ -51,10 +51,14 @@ object App {
 
   def handleClickEvents(region: String): String = {
     region match {
-      case "saveAndContinueN" => permissionGranted(true, "save")
-      case "discardAndContinueN" => permissionGranted(true, "discard")
-      case "cancelAndGoBackN" => permissionGranted(false, "")
+      case "saveAndContinueN" => permissionGranted("new", true, "save")
+      case "discardAndContinueN" => permissionGranted("new", true, "discard")
+      case "cancelAndGoBackN" => permissionGranted("new", false, "")
+      case "saveAndContinueO" => permissionGranted("open", true, "save")
+      case "discardAndContinueO" => permissionGranted("open", true, "discard")
+      case "cancelAndGoBackO" => permissionGranted("open", false, "")
       case "newAction" => confirmAction("new")
+      case "openAction" => confirmAction("open")
       case "undoAction" => undo()
       case "redoAction" => redo()
       case "cutAction" => cut()
@@ -109,28 +113,56 @@ object App {
       case "new" => {
         dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "block"
       }
-      case "open" => {}
+      case "open" => {
+        dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "block"
+      }
     }
   }
 
-  def permissionGranted(perm: Boolean, choice: String): Unit = {
-    perm match {
-      case true => {
-        choice match {
-          case "save" => {
-            dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
-            // TODO : save the current file
-            closeEditor()
-            newEditor()
+  def permissionGranted(action: String, perm: Boolean, choice: String): Unit = {
+    action match {
+      case "new" => {
+        perm match {
+          case true => {
+            choice match {
+              case "save" => {
+                dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
+                // TODO : save the current file
+                closeEditor()
+                newEditor()
+              }
+              case "discard" => {
+                dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
+                closeEditor
+                newEditor()
+              }
+            }
           }
-          case "discard" => {
-            dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
-            closeEditor
-            newEditor()
-          }
+          case false => {dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"}
         }
       }
-      case false => {dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"}
+      case "open" => {
+        perm match {
+          case true => {
+            choice match {
+              case "save" => {
+                dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"
+                // TODO : save the current file
+                closeEditor()
+                newEditor()
+                //TODO : open selected file
+              }
+              case "discard" => {
+                dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"
+                closeEditor
+                newEditor()
+                //TODO : open selected file
+              }
+            }
+          }
+          case false => {dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"}
+        }
+      }
     }
   }
 
@@ -359,7 +391,9 @@ object App {
               button(`type` := "button", id := "newAction","New",
                 onClick --> clickBus.writer
               ),
-              button(`type` := "button", id := "openAction","Open"),
+              button(`type` := "button", id := "openAction","Open",
+                onClick --> clickBus.writer
+              ),
               button(`type` := "button", id := "saveAction","Save"),
               button(`type` := "button", id := "saveAsAction","Save as"),
               button(`type` := "button", id := "exportAction","Export Table"),
@@ -901,7 +935,7 @@ object App {
             span(id := "dlgHeader","Warning!")
           ),
           div(cls := "dlg-body",
-            span("Creating new file :"),
+            span("Creating new file: "),
             span("You have changed this file since the last time it was saved."),
             span("Please confirm your desired action.")
           ),
@@ -924,14 +958,20 @@ object App {
             span(id := "dlgHeader","Warning!")
           ),
           div(cls := "dlg-body",
-          span("Opening file :"),
+          span("Opening file: "),
             span("You have changed this file since the last time it was saved."),
             span("Please confirm your desired action.")
           ),
           div(cls := "dlg-options",
-            button(`type` := "button", id := "saveAndContinueO","Save and continue"),
-            button(`type` := "button", id := "discardAndContinueO","Discard and continue"),
-            button(`type` := "button", id := "cancelAndGoBackO", "Cancel")
+            button(`type` := "button", id := "saveAndContinueO","Save and continue",
+              onClick --> clickBus.writer
+            ),
+            button(`type` := "button", id := "discardAndContinueO","Discard and continue",
+              onClick --> clickBus.writer
+            ),
+            button(`type` := "button", id := "cancelAndGoBackO", "Cancel",
+              onClick --> clickBus.writer
+            )
           )
         )
       )
