@@ -18,6 +18,10 @@ import com.scalawarrior.scalajs.ace._
 import java.lang.Float.parseFloat
 import scala.util.{Try,Success,Failure}
 
+import plotly._, element._, layout._
+
+final case class AcumenInfo(action: String, file: String)
+
 object App {
 
   private val css = AppCSS
@@ -45,6 +49,40 @@ object App {
     }
   }
 
+  def plotCurves(): Unit = {
+    val trace1 = Scatter(
+      Seq(1, 2, 3, 4),
+      Seq(10, 15, 13, 17)
+    )
+
+    val trace2 = Scatter(
+      Seq(1, 2, 3, 4),
+      Seq(16, 5, 11, 9)
+    )
+
+    val data = Seq(trace1, trace2)
+
+    val layout = Layout(
+      title = "Line and Scatter Plot"
+    )
+
+    Plotly.plot("plotTab", data, layout)
+  }
+
+  val acumenBus: EventBus[String] = new EventBus()
+
+  val acumenAnswer: EventStream[String] = acumenBus.events.flatMap(
+    str =>
+      EventStream.fromFuture(
+        boilerplate
+          .response(asStringAlways)
+          .post(path("acumen").param("str", str.toString))
+          .send()
+          .map(_.body)
+      )
+  )
+
+
   //Handle all Buttons in the API
   val clickBus = new EventBus[dom.MouseEvent]
   val coordinateStream: EventStream[String] = clickBus.events.map(ev => handleClickEvents(ev.srcElement.id))
@@ -59,6 +97,7 @@ object App {
       case "cancelAndGoBackO" => permissionGranted("open", false, "")
       case "newAction" => confirmAction("new")
       case "openAction" => confirmAction("open")
+      case "saveAsAction" => saveas()
       case "undoAction" => undo()
       case "redoAction" => redo()
       case "cutAction" => cut()
@@ -164,6 +203,12 @@ object App {
         }
       }
     }
+  }
+
+  def saveas(): Unit = {
+    val editor = ace.edit("editor")
+    editor.focus()
+    dom.document.execCommand("saveAs", true, ".acm")
   }
 
   def undo(): Unit = {
@@ -274,6 +319,7 @@ object App {
             dom.document.getElementById("threeDButton").asInstanceOf[html.Button].className = "vtablinks"
             dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
             dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "block"
+            plotCurves()
           }
           case "traceButton" => {
             dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "none"
@@ -370,6 +416,24 @@ object App {
       ),
       span("Returned: ", child <-- returned2.map(identity[String]))
     ),
+    section(
+      h2("Communication via JSON works ?"),
+      label(
+        cls:="switch",
+        input(
+          typ:="checkbox",
+          id:="launchToggle2",
+          inContext(
+          thisElem =>
+            onClick.mapTo("""{"action":"open", "file":"ex"}""") --> acumenBus.writer
+          )
+        ),
+        span(
+          cls:="sliderToggle round",
+        )
+      ),
+      span("Returned: ", child <-- acumenAnswer.map(identity[String]))
+    ),
     p("Button: ", child <-- coordinateStream.map(identity[String])),
     div(id := "loader",
       div(
@@ -395,7 +459,9 @@ object App {
                 onClick --> clickBus.writer
               ),
               button(`type` := "button", id := "saveAction","Save"),
-              button(`type` := "button", id := "saveAsAction","Save as"),
+              button(`type` := "button", id := "saveAsAction","Save as",
+                onClick --> clickBus.writer
+              ),
               button(`type` := "button", id := "exportAction","Export Table"),
               button(`type` := "button", id := "recoverAction","Recover")
             )
@@ -813,7 +879,16 @@ object App {
         div(id := "plotTab", cls := "vtabcontent", display:= "none"),
         div(id := "traceTab", cls := "vtabcontent", display:= "none",
           div(overflow:="auto",
-            table(id := "traceTable")
+            table(id := "traceTable",
+              thead(
+                th("1st Column"),
+                th("2nd Column")
+              ),
+              tbody(
+                td("bla"),
+                td("bla")
+              )
+            )
           )
         ),
         div(id := "threeDTab", cls := "vtabcontent", display:= "none",
@@ -979,6 +1054,9 @@ object App {
     script(
       typ:="text/javascript",
       src:="./ace-noconflict/ace.js"
+    ),
+    script(
+      src:="./plotly.min.js"
     )
   )
 }

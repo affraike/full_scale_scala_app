@@ -5,6 +5,7 @@ import play.api.Configuration
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.http.HttpErrorHandler
 import play.api.mvc._
+import play.api.libs.json._
 import utils.WriteableImplicits._
 import io.circe.generic.auto._
 import models.SharedModelClass
@@ -13,9 +14,11 @@ import utils.ReadsImplicits._
 import utils.database.tables.SharedModelTable
 import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext}
 
 import acumen.ui._
+
+final case class AcumenInfo(action: String, file: String)
 
 @Singleton
 final class HomeController @Inject()(
@@ -28,6 +31,9 @@ final class HomeController @Inject()(
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
     with testAcumenState {
+  
+  import App._
+  var acumen = new App()
 
   def index: Action[AnyContent] = assets.at("index.html")
 
@@ -52,6 +58,11 @@ final class HomeController @Inject()(
   def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     setStateAcumen(str)
     Ok("Acumen state changed to " + str)
+  }
+
+  def acumenAction(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    var obj = Json.parse(str)
+    Ok("you've sent: action=" + (obj \ "action").as[String] + ";file=" + (obj \ "file").as[String])
   }
 
   def todo: Action[AnyContent] = TODO

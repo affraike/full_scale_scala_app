@@ -15,7 +15,14 @@ object FrontendSettings {
     npmDevDependencies in Compile += "html-webpack-plugin" -> "3.2.0",
     npmDevDependencies in Compile += "copy-webpack-plugin" -> "5.0.2",
     npmDevDependencies in Compile += "webpack-merge" -> "4.2.1",
+    npmDevDependencies in Compile += "plotly.js-dist"-> "1.54.3",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.5" % Test,
+    // laminar
+    libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2",
+    //ace
+    libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.4",
+    //plotly
+    libraryDependencies += "org.plotly-scala" %%% "plotly-render" % "0.7.2",
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     version in webpack := "4.29.6",
@@ -27,10 +34,6 @@ object FrontendSettings {
     webpackDevServerExtraArgs in fastOptJS := Seq("--inline", "--hot"),
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     requireJsDomEnv in Test := true,
-    // laminar
-    libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2",
-    //ace
-    libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.4"
   )
 
 }

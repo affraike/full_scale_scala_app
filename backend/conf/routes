@@ -10,5 +10,7 @@ POST    /api/hello                      controllers.HomeController.helloNbr(nbr:
 
 POST    /api/com                    controllers.HomeController.changeAcumenState(str: String)
 
+POST    /api/acumen                 controllers.HomeController.acumenAction(str: String)
+
 # Serve static assets under public directory. KEEP THIS ROUTE AT THE END OF THIS FILE.
 GET     /*file                      controllers.HomeController.assetOrDefault(file)
