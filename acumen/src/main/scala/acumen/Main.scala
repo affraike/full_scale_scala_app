@@ -298,7 +298,11 @@ object Main {
   val jsonOSW = new BufferedWriter(new OutputStreamWriter(nodeSocket.getOutputStream, "UTF-8"))
   //val jsonOSW = new PrintStream(new BufferedOutputStream(nodeSocket.getOutputStream))
   val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
+  val httpResponse = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\n\r\n Hello!"
+  webInterface.socketSend(httpResponse)
   webInterface.socketSend(ujson.write(ujson.Obj("event" -> "message", "data" -> "Hello!")))
+
+
 
   //
   // Other stuff that should eventually be factored out
