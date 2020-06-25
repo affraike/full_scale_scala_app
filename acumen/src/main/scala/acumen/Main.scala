@@ -8,17 +8,15 @@ import render.ToPython._
 import Pretty._
 import PassManager._
 import benchTool._
-import java.net.ServerSocket
+import java.net.{ServerSocket, Socket}
 import acumen.interpreters.Common.paramModelTxt
 import scala.collection.mutable.ArrayBuffer
-
 
 object Main {
 
   //
   // What should be in Main
   //
-  var disableNewPlot = true
   var enableAllSemantics = true
   var autoPlay = false
   var openFile: File = null
@@ -26,7 +24,6 @@ object Main {
   var useCompletion = true
   var useTemplates = false
   var dontFork = false
-  var synchEditorWithBrowser = true // Synchronize code editor with file browser
   var extraPasses = Seq("BTA")
   var displayHelp = "none"
   var commandLineParms = false
@@ -140,10 +137,6 @@ object Main {
         extraPasses = extraPasses :+ "BTA"; parseArgs(tail)
       case ("--disable-bta") :: tail =>
         extraPasses = extraPasses.filter(_ != "BTA"); parseArgs(tail)
-      case ("--enable-newplot" | "--newplot") :: tail =>
-        disableNewPlot = false; parseArgs(tail)
-      case ("--disable-newplot" | "--no-newplot") :: tail =>
-        disableNewPlot = true; parseArgs(tail)
       case ("--prune-semantics") :: tail =>
         enableAllSemantics = false; parseArgs(tail)
       case "--disable-realtime" :: tail =>
@@ -243,7 +236,7 @@ object Main {
     } else {
       (if (positionalArgs.isEmpty) "ui" else positionalArgs(0)) match {
         case "ui" =>
-          ui.GraphicalMain.main(args)
+          ui.App.init
         case "examples" | "record-reference-outputs" =>
           examples()
         case _ =>
@@ -251,6 +244,61 @@ object Main {
       }
     }
   }
+
+  // NodeJS Server socket connection
+  case class nodeServer(sock: ServerSocket, inputStream: BufferedReader, outputStream: BufferedWriter) {
+    def socketSend(data: String): Unit = {
+      //println("Socket's data length: " + (data+"\n").length + ". Byte size: " + (data+"\n").getBytes("UTF-16BE").length)
+      if (data.length>9000) {
+        val splittedString = splitToNChar(data, 8000)
+        var counter = 0
+        for (frame <- splittedString) {
+          //println("Split length: " + frame.length)
+          if (counter==0) {
+            outputStream.write("[FRAME]" + frame)
+            //outputStream.newLine()
+            outputStream.flush()
+          }
+          else if (counter==splittedString.length-1) {
+            outputStream.write(frame + "[END]")
+            //outputStream.newLine()
+            outputStream.flush()
+          }
+          else {
+            outputStream.write(frame)
+            //outputStream.newLine()
+            outputStream.flush()
+          }
+          counter+=1
+        }
+      }
+      else {
+        outputStream.write(data + "\n")
+        outputStream.flush()
+      }
+    }
+
+    def splitToNChar(text: String, size: Int): List[String] = {
+      text.grouped(size).toList
+    }
+  }
+
+  var progressPortNo: Int = 9080
+  var dataPortNo: Int = 9090
+  var nodeServerSocket: ServerSocket = new ServerSocket(dataPortNo)
+  var progressServerSocket: ServerSocket = new ServerSocket(progressPortNo)
+  println("Waiting connection on ports " + progressPortNo + "," + dataPortNo)
+  val nodeSocket: Socket = nodeServerSocket.accept()
+  val progressSocket: Socket = progressServerSocket.accept()
+  println("Connection established.")
+
+  val jsonProgress = new BufferedWriter(new OutputStreamWriter(progressSocket.getOutputStream, "UTF-8"))
+
+  val nodeIN = new BufferedReader(new InputStreamReader(nodeSocket.getInputStream, "UTF-8"))
+  val jsonOSW = new BufferedWriter(new OutputStreamWriter(nodeSocket.getOutputStream, "UTF-8"))
+  //val jsonOSW = new PrintStream(new BufferedOutputStream(nodeSocket.getOutputStream))
+  val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
+  webInterface.socketSend(ujson.write(ujson.Obj("event" -> "message", "data" -> "Hello!")))
 
   //
   // Other stuff that should eventually be factored out

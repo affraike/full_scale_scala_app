@@ -1,13 +1,10 @@
 name := "acumen"
+
 version := "10-devel"
+
 scalaVersion := "2.11.6"
-sbtVersion := "0.13.8"
 
 mainClass := Some("acumen.Main")
-//theMainClass := "acumen.Main" //sbt version, addplugin, scala version
-
-
-//ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-swing" % "1.0.1",
@@ -16,11 +13,11 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-actors" % "2.11.5",
   "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  "org.scalanlp" % "breeze_2.11" % "0.12"
+  "org.scalanlp" % "breeze_2.11" % "0.12",
+  "com.lihaoyi" %% "upickle" % "0.7.1"
 )
 
-resolvers += ("tuxfamily" at "https://download.tuxfamily.org/arakhne/maven/")
-  //.withAllowInsecureProtocol(true)
+resolvers += "tuxfamily" at "http://download.tuxfamily.org/arakhne/maven/"
 
 libraryDependencies ++= Seq (
   "com.fifesoft" % "rsyntaxtextarea" % "2.5.3",
@@ -38,19 +35,8 @@ libraryDependencies ++= Seq (
 )
 
 resolvers ++= Seq(
-  ("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"),
-    //.withAllowInsecureProtocol(true),
-   ("releases"  at "https://oss.sonatype.org/content/repositories/releases")
-  //.withAllowInsecureProtocol(true)
-)
-
-resolvers +=
-  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-
-
-libraryDependencies ++= Seq( 
-   "org.jfree" % "jfreechart" % "1.0.14",
-   "org.jfree" % "jcommon" % "1.0.17"
+   "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
+   "releases"  at "http://oss.sonatype.org/content/repositories/releases"
 )
 
 //
@@ -80,9 +66,7 @@ assemblyMergeStrategy in assembly := {
 // set main based on theMainClass setting
 //
 
-mainClass in (Compile, run) := Some("acumen.Main") //~=  { m => m }
-
-//mainClass in Compile <<= theMainClass map { m => Some(m) }
+mainClass in (Compile, run) := Some("acumen.Main")
 
 //
 // Configuration for Execution and Test
@@ -97,7 +81,6 @@ javaOptions in run += "-Xmx1G"
 parallelExecution in Test := false
 
 logBuffered in Test := false
-
 
 // enable improved (experimental) incremental compilation algorithm called "name hashing"
 //incOptions := incOptions.value.withNameHashing(true)

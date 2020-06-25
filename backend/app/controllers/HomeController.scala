@@ -16,6 +16,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext}
 
+import acumen.Main
 import acumen.ui._
 
 final case class AcumenInfo(action: String, file: String)
@@ -31,9 +32,6 @@ final class HomeController @Inject()(
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
     with testAcumenState {
-  
-  import App._
-  var acumen = new App()
 
   def index: Action[AnyContent] = assets.at("index.html")
 
@@ -56,6 +54,11 @@ final class HomeController @Inject()(
   }
 
   def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (str == "on"){
+      if (getInitState()){
+        Main.main(Array())
+      }
+    }
     setStateAcumen(str)
     Ok("Acumen state changed to " + str)
   }

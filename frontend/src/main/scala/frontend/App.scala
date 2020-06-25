@@ -6,6 +6,7 @@ import org.scalajs.dom.html
 import HttpClient._
 import org.scalajs.dom
 import org.scalajs.dom.{MouseEvent}
+import org.scalajs.dom.raw._
 import sttp.client._
 import io.circe.generic.auto._
 import io.circe.parser.decode
@@ -27,6 +28,18 @@ object App {
   private val css = AppCSS
   dom.console.log(css.asInstanceOf[js.Object])
 
+  var stocks2 = new EventSource("http://localhost:9080");
+    stocks2.onmessage = (event: MessageEvent) => {
+      var data = event.data
+      dom.console.log(data.toString)
+    }
+  
+  var stocks = new EventSource("http://localhost:9090");
+    stocks.onmessage = (event: MessageEvent) => {
+      var data = event.data
+      dom.console.log(data.toString)
+    }
+
   //Implement backend/acumen communication
   val postBus2: EventBus[String] = new EventBus()
 
@@ -35,7 +48,7 @@ object App {
       EventStream.fromFuture(
         boilerplate
           .response(asStringAlways)
-          .post(path("com").param("str", str.toString))
+          .post(HttpClient.path("com").param("str", str.toString))
           .send()
           .map(_.body)
       )
@@ -76,7 +89,7 @@ object App {
       EventStream.fromFuture(
         boilerplate
           .response(asStringAlways)
-          .post(path("acumen").param("str", str.toString))
+          .post(HttpClient.path("acumen").param("str", str.toString))
           .send()
           .map(_.body)
       )

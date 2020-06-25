@@ -23,6 +23,8 @@ object FrontendSettings {
     libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.4",
     //plotly
     libraryDependencies += "org.plotly-scala" %%% "plotly-render" % "0.7.2",
+    // socket
+    libraryDependencies += "io.scalajs.npm" %%% "express-ws" % "0.4.2",
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     version in webpack := "4.29.6",

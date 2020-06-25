@@ -64,6 +64,7 @@ lazy val `frontend` = (project in file("./frontend"))
   .settings(
     scalaVersion := "2.12.10",
     resolvers += "amateras-repo" at "http://amateras.sourceforge.jp/mvn/",
+    resolvers += Resolver.sonatypeRepo("releases"),
     FrontendSettings(),
     SharedSettings()
   )
