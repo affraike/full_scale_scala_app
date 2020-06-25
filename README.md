@@ -53,7 +53,4 @@ and in another,
 sbt backend/run
 ```
 
-and in another,
-```bash
-sbt acumen/run
-```
+Acumen desktop api can no longer be launched inside the app.
