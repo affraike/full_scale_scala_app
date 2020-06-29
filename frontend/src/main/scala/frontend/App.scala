@@ -28,17 +28,30 @@ object App {
   private val css = AppCSS
   dom.console.log(css.asInstanceOf[js.Object])
 
-  var stocks2 = new EventSource("http://localhost:9080");
-    stocks2.onmessage = (event: MessageEvent) => {
-      var data = event.data
-      dom.console.log(data.toString)
-    }
+  // Connexion to Acumen Sockets
+  var connecting = boilerplate
+    .response(asStringAlways)
+    .post(HttpClient.path("init"))
+    .send()
+    .map(_.body)
+
+  //var stocks2 = new EventSource("http://localhost:9080")
+  //stocks2.onmessage = (event: MessageEvent) => {
+  //  var data = event.data
+  //  dom.console.log(data.toString)
+  //}
   
-  var stocks = new EventSource("http://localhost:9090");
-    stocks.onmessage = (event: MessageEvent) => {
-      var data = event.data
-      dom.console.log(data.toString)
-    }
+  var stocks = new EventSource("http://localhost:9090")
+  stocks.onmessage = (event: MessageEvent) => {
+    dom.console.log(event.data.toString)
+  }
+  stocks.onopen = (event: Event) => {
+    dom.console.log("Stream from Acumen towards frontend opened !")
+  }
+
+  def checkEvtSrc(evtsrc : EventSource) : Unit = {
+    dom.console.log(evtsrc.readyState)
+  }
 
   //Implement backend/acumen communication
   val postBus2: EventBus[String] = new EventBus()
@@ -143,6 +156,7 @@ object App {
       case "stopButtonImg" | "stopMenuButton" => playpause("stop")
       case "startServer" => startstopserver("start")
       case "stopServer" => startstopserver("stop")
+      case "checkEventSource" => checkEvtSrc(stocks)
     }
 
     return region
@@ -427,7 +441,10 @@ object App {
           cls:="sliderToggle round",
         )
       ),
-      span("Returned: ", child <-- returned2.map(identity[String]))
+      span("Returned: ", child <-- returned2.map(identity[String])),
+      button(`type` := "button", id := "checkEventSource","Check",
+        onClick --> clickBus.writer
+      )
     ),
     section(
       h2("Communication via JSON works ?"),

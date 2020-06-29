@@ -35,11 +35,12 @@ trait testAcumenState  {
   def getInitState(): Boolean = {
     return first
   }
+  def setInitState(bol: Boolean): Unit = {
+    first = bol
+  }
 
   def setStateAcumen(st: String): Unit = {
-    print("statement is set to? " + st)
     onoff = st
-    first = false
   }
 }
 

@@ -32,6 +32,8 @@ final class HomeController @Inject()(
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
     with testAcumenState {
+  
+  println("Is this action executed?")
 
   def index: Action[AnyContent] = assets.at("index.html")
 
@@ -53,12 +55,15 @@ final class HomeController @Inject()(
     Ok(s"You gave me $nbr")
   }
 
-  def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    if (str == "on"){
-      if (getInitState()){
-        Main.main(Array())
-      }
+  def initAcumen(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (getInitState()){
+      setInitState(false)
+      Main.main(Array())
     }
+    Ok("Acumen Initialized")
+  }
+
+  def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     setStateAcumen(str)
     Ok("Acumen state changed to " + str)
   }
