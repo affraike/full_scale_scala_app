@@ -1,7 +1,4 @@
-.App{
-overflow-y: auto;
-overflow-x: auto;
-}
+
 .switch {
 position: relative;
 display: inline-block;

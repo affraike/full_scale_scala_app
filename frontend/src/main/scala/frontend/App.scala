@@ -40,20 +40,8 @@ object App {
   //  var data = event.data
   //  dom.console.log(data.toString)
   //}
-  
-  var stocks = new EventSource("http://localhost:9090")
-  stocks.onmessage = (event: MessageEvent) => {
-    dom.console.log(event.data.toString)
-  }
-  stocks.onopen = (event: Event) => {
-    dom.console.log("Stream from Acumen towards frontend opened !")
-  }
 
-  def checkEvtSrc(evtsrc : EventSource) : Unit = {
-    dom.console.log(evtsrc.readyState)
-  }
-
-  //Implement backend/acumen communication
+  //Toogle button communication
   val postBus2: EventBus[String] = new EventBus()
 
   val returned2: EventStream[String] = postBus2.events.flatMap(
@@ -75,26 +63,7 @@ object App {
     }
   }
 
-  def plotCurves(): Unit = {
-    val trace1 = Scatter(
-      Seq(1, 2, 3, 4),
-      Seq(10, 15, 13, 17)
-    )
-
-    val trace2 = Scatter(
-      Seq(1, 2, 3, 4),
-      Seq(16, 5, 11, 9)
-    )
-
-    val data = Seq(trace1, trace2)
-
-    val layout = Layout(
-      title = "Line and Scatter Plot"
-    )
-
-    Plotly.plot("plotTab", data, layout)
-  }
-
+  // Frontend/Backend communication
   val acumenBus: EventBus[String] = new EventBus()
 
   val acumenAnswer: EventStream[String] = acumenBus.events.flatMap(
@@ -108,324 +77,10 @@ object App {
       )
   )
 
-
-  //Handle all Buttons in the API
-  val clickBus = new EventBus[dom.MouseEvent]
-  val coordinateStream: EventStream[String] = clickBus.events.map(ev => handleClickEvents(ev.srcElement.id))
-
-  def handleClickEvents(region: String): String = {
-    region match {
-      case "saveAndContinueN" => permissionGranted("new", true, "save")
-      case "discardAndContinueN" => permissionGranted("new", true, "discard")
-      case "cancelAndGoBackN" => permissionGranted("new", false, "")
-      case "saveAndContinueO" => permissionGranted("open", true, "save")
-      case "discardAndContinueO" => permissionGranted("open", true, "discard")
-      case "cancelAndGoBackO" => permissionGranted("open", false, "")
-      case "newAction" => confirmAction("new")
-      case "openAction" => confirmAction("open")
-      case "saveAsAction" => saveas()
-      case "undoAction" => undo()
-      case "redoAction" => redo()
-      case "cutAction" => cut()
-      case "copyAction" => copy()
-      case "pasteAction" => paste()
-      case "incIndentAction" => incindent()
-      case "decIndentAction" => decindent()
-      case "selectAllAction" => selectall()
-      case "showFind" => find()
-      case "increaseFontSize" => changefontsize(2)
-      case "reduceFontSize" => changefontsize(-2)
-      case "resetFontSize" => resetfontsize()
-      case "monospaced" => font("Monospaced")
-      case "consolas" => font("Consolas")
-      case "courierView" => font("Courier View")
-      case "lucidaConsole" => font("Lucida Console")
-      case "dreamTheme" => theme("dreamweaver")
-      case "textMateTheme" => theme("textMate")
-      case "ambianceTheme" => theme("ambiance")
-      case "draculaTheme" => theme("dracula")
-      case "lineNumbers" => linenumbers()
-      case "consoleButton" => changeActiveAera("ctab", region)
-      case "browserButton" => changeActiveAera("ctab", region)
-      case "plotButton" => changeActiveAera("vtab", region)
-      case "traceButton" => changeActiveAera("vtab", region)
-      case "threeDButton" => changeActiveAera("vtab", region)
-      case "playButtonImg" | "playMenuButton" => playpause("play")
-      case "pauseButtonImg" | "pauseMenuButton" => playpause("pause")
-      case "stepButtonImg" | "stepMenuButton" => playpause("step")
-      case "stopButtonImg" | "stopMenuButton" => playpause("stop")
-      case "startServer" => startstopserver("start")
-      case "stopServer" => startstopserver("stop")
-      case "checkEventSource" => checkEvtSrc(stocks)
-    }
-
-    return region
-  }
-
-  def closeEditor(): Unit = {
-    val editor = ace.edit("editor")
-    editor.destroy()
-  }
-
-  def newEditor(): Unit = {
-    val editor = ace.edit("editor")
-    editor.setValue("")
-    editor.setTheme("ace/theme/dracula")
-    editor.getSession().setMode("ace/mode/acumen")
-  }
-
-  def confirmAction(action: String): Unit = {
-    action match {
-      case "new" => {
-        dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "block"
-      }
-      case "open" => {
-        dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "block"
-      }
-    }
-  }
-
-  def permissionGranted(action: String, perm: Boolean, choice: String): Unit = {
-    action match {
-      case "new" => {
-        perm match {
-          case true => {
-            choice match {
-              case "save" => {
-                dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
-                // TODO : save the current file
-                closeEditor()
-                newEditor()
-              }
-              case "discard" => {
-                dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"
-                closeEditor
-                newEditor()
-              }
-            }
-          }
-          case false => {dom.document.getElementById("promptPanelNew").asInstanceOf[html.Div].style.display = "none"}
-        }
-      }
-      case "open" => {
-        perm match {
-          case true => {
-            choice match {
-              case "save" => {
-                dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"
-                // TODO : save the current file
-                closeEditor()
-                newEditor()
-                //TODO : open selected file
-              }
-              case "discard" => {
-                dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"
-                closeEditor
-                newEditor()
-                //TODO : open selected file
-              }
-            }
-          }
-          case false => {dom.document.getElementById("promptPanelOpen").asInstanceOf[html.Div].style.display = "none"}
-        }
-      }
-    }
-  }
-
-  def saveas(): Unit = {
-    val editor = ace.edit("editor")
-    editor.focus()
-    dom.document.execCommand("saveAs", true, ".acm")
-  }
-
-  def undo(): Unit = {
-    val editor = ace.edit("editor")
-    if (editor.session.getUndoManager().hasUndo()){
-      editor.undo()
-    }
-  }
-
-  def redo(): Unit = {
-    val editor = ace.edit("editor")
-    if (editor.session.getUndoManager().hasRedo()){
-      editor.redo()
-    }
-  }
-
-  def cut(): Unit = {
-    val editor = ace.edit("editor")
-    editor.focus()
-    dom.document.execCommand("cut")
-  }
-
-  def copy(): Unit = {
-    val editor = ace.edit("editor")
-    editor.focus()
-    dom.document.execCommand("copy")
-  }
-
-  def paste(): Unit = {
-    val editor = ace.edit("editor")
-    editor.focus()
-    dom.document.execCommand("paste")
-  }
-
-  def incindent(): Unit = {
-    val editor = ace.edit("editor")
-    editor.indent()
-  }
-
-  def decindent(): Unit = {
-    val editor = ace.edit("editor")
-    editor.blockOutdent()
-  }
-
-  def selectall(): Unit = {
-    val editor = ace.edit("editor")
-    editor.selectAll()
-  }
-
-  def find(): Unit = {
-    val editor = ace.edit("editor")
-    editor.execCommand("find")
-  }
-
-  def theme(th: String): Unit = {
-    val editor = ace.edit("editor")
-    editor.setTheme("ace/theme/" + th)
-  }
-
-  def linenumbers(): Unit = {
-    val editor = ace.edit("editor")
-    if (dom.document.getElementById("lineNumbers").asInstanceOf[html.Input].checked == true) { editor.renderer.setShowGutter(true)}
-    else { editor.renderer.setShowGutter(false)}
-  }
-
-  def changefontsize(value: Float): Unit = {
-    val style = dom.window.getComputedStyle(dom.document.getElementById("editor").asInstanceOf[html.Div], null).getPropertyValue("font-size")
-    var currentSize = 0.0
-    style.length match {
-      case 4 => {currentSize = parseFloat(style.take(2))}
-      case 3 => {currentSize = parseFloat(style.take(1))}
-    }
-    val newFontSize = currentSize + value + "px"
-    dom.console.log(currentSize)
-    val editor = ace.edit("editor")
-    editor.setFontSize(newFontSize)
-  }
-
-  def resetfontsize(): Unit = {
-    val editor = ace.edit("editor")
-    editor.setFontSize("12px")
-  }
-
-  def font(fontFamily: String): Unit = {
-    dom.document.getElementById("editor").asInstanceOf[html.Div].style.fontFamily = fontFamily
-  }
-
-  def changeActiveAera(area: String, subarea: String) : Unit = {
-    area match{
-      case "ctab" => {
-        subarea match {
-          case "consoleButton" => {
-            dom.document.getElementById("browserButton").asInstanceOf[html.Button].className = "ctablinks"
-            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
-          }
-          case "browserButton" => {
-            dom.document.getElementById("consoleButton").asInstanceOf[html.Button].className = "ctablinks"
-            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
-          }
-        }
-      }
-      case "vtab" => {
-        subarea match {
-          case "plotButton" => {
-            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("traceButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById("threeDButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
-            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "block"
-            plotCurves()
-          }
-          case "traceButton" => {
-            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("plotButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById("threeDButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
-            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "block"
-          }
-          case "threeDButton" => {
-            dom.document.getElementById("plotTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("traceTab").asInstanceOf[html.Div].style.display = "none"
-            dom.document.getElementById("plotButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById("traceButton").asInstanceOf[html.Button].className = "vtablinks"
-            dom.document.getElementById(subarea).asInstanceOf[html.Button].className += " active"
-            dom.document.getElementById("threeDTab").asInstanceOf[html.Div].style.display = "block"
-          }
-        }
-      }
-    }
-  }
-
-  def playpause(state: String): Unit = {
-    state match {
-      case "play" => {
-        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("stopButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "block"
-        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "block"
-      }
-      case "pause" => {
-        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "block"
-        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "block"
-      }
-      case "step" => {
-        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = false
-      }
-      case "stop" => {
-        dom.document.getElementById("pauseButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("pauseMenuButton").asInstanceOf[html.Button].style.display = "none"
-        dom.document.getElementById("stopMenuButton").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("stopButton").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("stepButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("stepMenuButton").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("playButton").asInstanceOf[html.Button].style.display = "block"
-        dom.document.getElementById("playMenuButton").asInstanceOf[html.Button].style.display = "block"
-      }
-    }
-  }
-
-  def startstopserver(state: String): Unit = {
-    state match {
-      case "start" => {
-        dom.document.getElementById("startServer").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("stopServer").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("resetDevice").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("serverLink").asInstanceOf[html.Button].disabled = false
-      }
-      case "stop" => {
-        dom.document.getElementById("startServer").asInstanceOf[html.Button].disabled = false
-        dom.document.getElementById("stopServer").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("resetDevice").asInstanceOf[html.Button].disabled = true
-        dom.document.getElementById("serverLink").asInstanceOf[html.Button].disabled = true
-      }
-    }
-  }
-
   // Handle API rendering
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
-    section(
+    div(display:= "none",
       h2("Communication Backend ↔ Acumen works ?"),
       label(
         cls:="switch",
@@ -434,7 +89,7 @@ object App {
           id:="launchToggle",
           inContext(
           thisElem =>
-            onClick.mapTo(change(thisElem.ref.checked)) --> postBus2.writer
+            onClick.mapTo(change(thisElem.ref.checked)) --> postBus2.writer,
           )
         ),
         span(
@@ -442,29 +97,8 @@ object App {
         )
       ),
       span("Returned: ", child <-- returned2.map(identity[String])),
-      button(`type` := "button", id := "checkEventSource","Check",
-        onClick --> clickBus.writer
-      )
+      p("Acumen: ", child <-- acumenAnswer.map(identity[String]))
     ),
-    section(
-      h2("Communication via JSON works ?"),
-      label(
-        cls:="switch",
-        input(
-          typ:="checkbox",
-          id:="launchToggle2",
-          inContext(
-          thisElem =>
-            onClick.mapTo("""{"action":"open", "file":"ex"}""") --> acumenBus.writer
-          )
-        ),
-        span(
-          cls:="sliderToggle round",
-        )
-      ),
-      span("Returned: ", child <-- acumenAnswer.map(identity[String]))
-    ),
-    p("Button: ", child <-- coordinateStream.map(identity[String])),
     div(id := "loader",
       div(
         div(
@@ -482,15 +116,12 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","File"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "newAction","New",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "newAction","New"
               ),
-              button(`type` := "button", id := "openAction","Open",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "openAction","Open"
               ),
               button(`type` := "button", id := "saveAction","Save"),
-              button(`type` := "button", id := "saveAsAction","Save as",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "saveAsAction","Save as"
               ),
               button(`type` := "button", id := "exportAction","Export Table"),
               button(`type` := "button", id := "recoverAction","Recover")
@@ -499,49 +130,37 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Edit"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "undoAction","Undo",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "undoAction","Undo"
               ),
-              button(`type` := "button", id := "redoAction","Redo",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "redoAction","Redo"
               ),
               hr(),
-              button(`type` := "button", id := "cutAction","Cut",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "cutAction","Cut"
               ),
-              button(`type` := "button", id := "copyAction","Copy",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "copyAction","Copy"
               ),
-              button(`type` := "button", id := "pasteAction", disabled:=true, "Paste",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "pasteAction", disabled:=true, "Paste"
               ),
               hr(),
-              button(`type` := "button", id := "incIndentAction","Increase Indentation",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "incIndentAction","Increase Indentation"
               ),
-              button(`type` := "button", id := "decIndentAction","Decrease Indentation",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "decIndentAction","Decrease Indentation"
               ),
               hr(),
-              button(`type` := "button", id := "selectAllAction","Select All",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "selectAllAction","Select All"
               ),
-              button(`type` := "button", id := "showFind","Find",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "showFind","Find"
               )
             )
           ),
           li(cls := "navMenuItem",
             a(cls := "dropbtn","View"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "increaseFontSize","Enlarge Font",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "increaseFontSize","Enlarge Font"
               ),
-              button(`type` := "button", id := "reduceFontSize","Reduce Font",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "reduceFontSize","Reduce Font"
               ),
-              button(`type` := "button", id := "resetFontSize","Reset Font",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "resetFontSize","Reset Font"
               ),
               div(cls := "vertical-nav",
                 div(
@@ -553,29 +172,25 @@ object App {
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="monospaced", checked := false),
-                    "Monospaced",
-                    onClick --> clickBus.writer
+                    "Monospaced"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="consolas", checked := true),
-                    "Consolas",
-                    onClick --> clickBus.writer
+                    "Consolas"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="courierView", checked:= false),
-                    "Courier View",
-                    onClick --> clickBus.writer
+                    "Courier View"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="lucidaConsole", checked := false),
-                    "Lucida Console",
-                    onClick --> clickBus.writer
+                    "Lucida Console"
                     )
                   )
                 )
@@ -592,36 +207,31 @@ object App {
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="dreamTheme", checked := false),
-                    "dreamweaver",
-                    onClick --> clickBus.writer
+                    "dreamweaver"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="textMateTheme", checked := false),
-                    "textMate",
-                    onClick --> clickBus.writer
+                    "textMate"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="ambianceTheme", checked := false),
-                    "ambiance",
-                    onClick --> clickBus.writer
+                    "ambiance"
                     )
                   ),
                   li(
                     label(
                     input(`type` := "radio", name := "font", id:="draculaTheme", checked := true),
-                    "dracula",
-                    onClick --> clickBus.writer
+                    "dracula"
                     )
                   )
                 )
               ),
               label(
-                input(`type` := "checkbox", id := "lineNumbers", checked := true,
-                  onClick --> clickBus.writer
+                input(`type` := "checkbox", id := "lineNumbers", checked := true
                 ),
                 span("Line Numbers")
               )
@@ -674,17 +284,13 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Model"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "playMenuButton","Run",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "playMenuButton","Run"
               ),
-              button(`type` := "button", id := "pauseMenuButton", display:="none","Pause",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "pauseMenuButton", display:="none","Pause"
               ),
-              button(`type` := "button", id := "stepMenuButton","Step",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "stepMenuButton","Step"
               ),
-              button(`type` := "button", id := "stopMenuButton", disabled := true,"Stop",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "stopMenuButton", disabled := true,"Stop"
               )
             )
           ),
@@ -808,11 +414,9 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","Devices"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "startServer","Start Server",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "startServer","Start Server"
               ),
-              button(`type` := "button", id := "stopServer", disabled := true,"Stop Server",
-                onClick --> clickBus.writer
+              button(`type` := "button", id := "stopServer", disabled := true,"Stop Server"
               ),
               button(`type` := "button", id := "resetDevice", disabled := true,"Reset Device"),
               button(`type` := "button", id := "serverLink", disabled := true,"Server Link")
@@ -845,29 +449,25 @@ object App {
               button(id := "playButton", cls := "tooltip fade", name:= "Run Simulation",
                 img(
                     src:="./icons/play.png",
-                    id := "playButtonImg",
-                    onClick --> clickBus.writer
+                    id := "playButtonImg"
                 )
               ),
               button(id := "pauseButton", cls := "tooltip fade", name := "Pause simulation", display:= "none",
                 img(
                     src:="./icons/pause.png",
-                    id := "pauseButtonImg",
-                    onClick --> clickBus.writer
+                    id := "pauseButtonImg"
                 )
               ),
               button(id := "stepButton", cls := "tooltip fade", name := "Compute one simulation step",
                 img(
                     src:="./icons/step.png",
-                    id := "stepButtonImg",
-                    onClick --> clickBus.writer
+                    id := "stepButtonImg"
                   )
               ),
               button(id := "stopButton", cls := "tooltip fade", name := "Stop simulation (cannot resume)", disabled:=true,
                 img(
                     src:="./icons/stop.png",
-                    id := "stopButtonImg",
-                    onClick --> clickBus.writer
+                    id := "stopButtonImg"
                 )
               )
             ),
@@ -879,11 +479,9 @@ object App {
         ),
         div(id := "lowerPane",
           div(cls := "tabs",
-            button(id := "consoleButton", cls := "ctablinks active","Console",
-              onClick --> clickBus.writer
+            button(id := "consoleButton", cls := "ctablinks active","Console"
             ),
-            button(id := "browserButton", cls := "ctablinks","Browser",
-              onClick --> clickBus.writer
+            button(id := "browserButton", cls := "ctablinks","Browser"
             )
           ),
           div(id := "consoleTab", cls := "ctabcontent", height:="calc(100% - 70px)", overflow:="auto",
@@ -896,14 +494,11 @@ object App {
       ),
       div(id := "viewsPane",
         div(cls := "views",
-          button(id := "plotButton", cls := "vtablinks active","Plot",
-            onClick --> clickBus.writer
+          button(id := "plotButton", cls := "vtablinks active","Plot"
           ),
-          button(id := "traceButton", cls := "vtablinks","Table",
-            onClick --> clickBus.writer
+          button(id := "traceButton", cls := "vtablinks","Table"
           ),
-          button(id := "threeDButton", cls := "vtablinks","_3D",
-            onClick --> clickBus.writer
+          button(id := "threeDButton", cls := "vtablinks","_3D"
           )
         ),
         div(id := "plotTab", cls := "vtabcontent", display:= "none"),
@@ -1034,48 +629,21 @@ object App {
           )
         )
       ),
-      div(id := "promptPanelNew", display:="none",
+      div(id := "promptPanel", display:="none",
         div(id := "dialog",
           div(cls := "dlg-header",
             span(id := "dlgHeader","Warning!")
           ),
           div(cls := "dlg-body",
-            span("Creating new file: "),
             span("You have changed this file since the last time it was saved."),
             span("Please confirm your desired action.")
           ),
           div(cls := "dlg-options",
-            button(`type` := "button", id := "saveAndContinueN","Save and continue",
-              onClick --> clickBus.writer
+            button(`type` := "button", id := "saveAndContinue","Save and continue"
             ),
-            button(`type` := "button", id := "discardAndContinueN","Discard and continue",
-              onClick --> clickBus.writer
+            button(`type` := "button", id := "discardAndContinue","Discard and continue"
             ),
-            button(`type` := "button", id := "cancelAndGoBackN", "Cancel",
-              onClick --> clickBus.writer
-            )
-          )
-        )
-      ),
-      div(id := "promptPanelOpen", display:="none",
-        div(id := "dialog",
-          div(cls := "dlg-header",
-            span(id := "dlgHeader","Warning!")
-          ),
-          div(cls := "dlg-body",
-          span("Opening file: "),
-            span("You have changed this file since the last time it was saved."),
-            span("Please confirm your desired action.")
-          ),
-          div(cls := "dlg-options",
-            button(`type` := "button", id := "saveAndContinueO","Save and continue",
-              onClick --> clickBus.writer
-            ),
-            button(`type` := "button", id := "discardAndContinueO","Discard and continue",
-              onClick --> clickBus.writer
-            ),
-            button(`type` := "button", id := "cancelAndGoBackO", "Cancel",
-              onClick --> clickBus.writer
+            button(`type` := "button", id := "cancelAndGoBack", "Cancel"
             )
           )
         )
@@ -1087,6 +655,9 @@ object App {
     ),
     script(
       src:="./plotly.min.js"
+    ),
+    script(
+      src:="./acumen.js"
     )
   )
 }

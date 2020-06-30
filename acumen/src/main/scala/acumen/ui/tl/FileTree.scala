@@ -11,7 +11,7 @@ class FileTree() {
 
   def serializeFileTree(initialPath: File): Unit = {
     root = initialPath
-    //Main.webInterface.socketSend(ujson.write(createFileTree(root)))
+    Main.webInterface.socketSend("data: " + ujson.write(createFileTree(root)) + "\n\n")
   }
 
   def createFileTree(currentPath: File, index:Int = 0): ujson.Arr = {

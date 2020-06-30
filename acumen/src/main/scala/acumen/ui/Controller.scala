@@ -62,8 +62,8 @@ class Controller extends DaemonActor {
     val endTime = getEndTime(s)
     if ((time * 100 / endTime).toInt != progressTime) {
       progressTime = (time * 100 / endTime).toInt
-      //Main.jsonProgress.write("[PROGRESS]" + ujson.write(ujson.Obj("event" -> "progress", "data" -> ujson.Num(progressTime))) + "[/PROGRESS]\n")
-      //Main.jsonProgress.flush()
+      Main.jsonProgress.write("data: " + "[PROGRESS]" + ujson.write(ujson.Obj("event" -> "progress", "data" -> ujson.Num(progressTime))) + "[/PROGRESS]\n" + "\n\n")
+      Main.jsonProgress.flush()
     }
   }
 

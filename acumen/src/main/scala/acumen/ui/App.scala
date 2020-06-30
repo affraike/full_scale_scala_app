@@ -22,7 +22,7 @@ import swing.event._
 import acumen.{SemanticsImpl => S}
 import acumen.ui.threeD._
 
-trait testAcumenState  {
+trait AcumenController  {
 
   var onoff: String = "off"
   
@@ -171,8 +171,8 @@ class App extends SimpleSwingApplication {
               filetree.serializeFileTree(Files.currentDir)      // Serialize fileTree
               codeArea.sendInitCodeArea()                       // Serialize codeArea
               constructSemanticsItems()                         // Serialize semantics menu
-              //if (Main.extraPasses.contains("normalize")) { Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "enableNormalize"))) }
-              //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "state", "state" -> "appReady")))
+              if (Main.extraPasses.contains("normalize")) { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "enableNormalize")) + "\n\n") }
+              Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> "appReady")) + "\n\n")
           }
         case "codeUpdate" =>
           codeArea.updateCodeText(jsonString(0)("text").str)
@@ -221,9 +221,9 @@ class App extends SimpleSwingApplication {
               case st: State =>
                 st match {
                   case _:App.Ready =>
-                    //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)))
+                    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
                   case _:App.Playing =>
-                    //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)))
+                    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
                   case _ =>
                 }
               case _ =>
@@ -287,7 +287,7 @@ class App extends SimpleSwingApplication {
       else semanticsGroup.obj.put("deprecated", semanticsData)
       semanticsJson.arr.append(semanticsGroup.value)
     }
-    //Main.webInterface.socketSend(ujson.write(semanticsJson))
+    Main.webInterface.socketSend("data: " + ujson.write(semanticsJson) + "\n\n")
   }
 
   //**************************************
@@ -605,13 +605,13 @@ class App extends SimpleSwingApplication {
     } else if (!threeDtab.checkBoxState("matchWallClock")) {
       threeDtab.setCheckBoxState(true, "matchWallClock")
     }
-    //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "serverStarted", "link" -> (IPADDRESS + ":8000/index"))))
+    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStarted", "link" -> (IPADDRESS + ":8000/index"))) + "\n\n")
   }
 
   def stopServer(): Unit = {
     resetDevice()
     BuildHost.BuildHost.stop()
-    //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "serverStopped")))
+    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStopped")) + "\n\n")
   }
 
   def resetDevice(): Unit = {
@@ -668,13 +668,13 @@ class App extends SimpleSwingApplication {
         if (modelFinished && !threeDtab.checkBoxState("realTime")) {
           views.selectThreeDView()
           selectedView = viewsCollection(2)
-          //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")))
+          Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")) + "\n\n")
           threeDtab.play()
         }
       } else if (selectedView.equals(viewsCollection(2))) {
         views.selectPlotView()
         selectedView = viewsCollection(0)
-        //Main.webInterface.socketSend(ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "plotView")))
+        Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "plotView")) + "\n\n")
       }
   }
 
@@ -696,7 +696,7 @@ class App extends SimpleSwingApplication {
       rowArr.arr.clear()
     }
     jsonFormat.arr.append(tableArr)
-    //Main.webInterface.socketSend(ujson.write(jsonFormat))
+    Main.webInterface.socketSend("data: " + ujson.write(jsonFormat) + "\n\n")
   }
 
   def confirmSave(c: java.awt.Component, f:File) = {

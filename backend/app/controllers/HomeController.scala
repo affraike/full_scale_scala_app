@@ -31,7 +31,7 @@ final class HomeController @Inject()(
 )(implicit val ec: ExecutionContext)
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
-    with testAcumenState {
+    with AcumenController {
   
   println("Is this action executed?")
 
@@ -65,12 +65,13 @@ final class HomeController @Inject()(
 
   def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     setStateAcumen(str)
+    Main.webInterface.socketSend("data: Hey!\n\n")
     Ok("Acumen state changed to " + str)
   }
 
   def acumenAction(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    var obj = Json.parse(str)
-    Ok("you've sent: action=" + (obj \ "action").as[String] + ";file=" + (obj \ "file").as[String])
+    App.ui.deserializeSocketInput(str)
+    Ok("task completed: " + str)
   }
 
   def todo: Action[AnyContent] = TODO

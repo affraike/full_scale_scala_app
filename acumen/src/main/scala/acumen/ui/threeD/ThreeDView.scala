@@ -1441,7 +1441,7 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
             slider.setProgress3D(percentage)
             slider.setTime(_3DTimeTag(currentFrame).toFloat)
             if (percentage==100) {
-              //acumen.Main.webInterface.socketSend(ujson.write(threedFrames))
+              acumen.Main.webInterface.socketSend("data: " + ujson.write(threedFrames) + "\n\n")
               threedFrames.arr.clear()
               threedFrames.arr.append(ujson.Obj("action" -> "threedAllFrames"))
             }

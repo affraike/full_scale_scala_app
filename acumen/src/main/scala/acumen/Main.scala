@@ -283,25 +283,23 @@ object Main {
     }
   }
 
-  //var progressPortNo: Int = 9080
+  var progressPortNo: Int = 9080
   var dataPortNo: Int = 9090
   var nodeServerSocket: ServerSocket = new ServerSocket(dataPortNo)
-  //var progressServerSocket: ServerSocket = new ServerSocket(progressPortNo)
-  println("Waiting connection on ports " /*+ progressPortNo + ","*/ + dataPortNo)
+  var progressServerSocket: ServerSocket = new ServerSocket(progressPortNo)
+  println("Waiting connection on ports " + progressPortNo + "," + dataPortNo)
   val nodeSocket: Socket = nodeServerSocket.accept()
-  //val progressSocket: Socket = progressServerSocket.accept()
-  println("Connection established.")
+  val progressSocket: Socket = progressServerSocket.accept()
 
-  //val jsonProgress = new BufferedWriter(new OutputStreamWriter(progressSocket.getOutputStream, "UTF-8"))
+  val jsonProgress = new BufferedWriter(new OutputStreamWriter(progressSocket.getOutputStream, "UTF-8"))
 
   val nodeIN = new BufferedReader(new InputStreamReader(nodeSocket.getInputStream, "UTF-8"))
   val jsonOSW = new BufferedWriter(new OutputStreamWriter(nodeSocket.getOutputStream, "UTF-8"))
   //val jsonOSW = new PrintStream(new BufferedOutputStream(nodeSocket.getOutputStream))
   val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
-  val httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnexion: Keep-Alive\r\nAccess-Control-Allow-Origin: *\r\n\r\n Open!"
+  val httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnexion: Keep-Alive\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
   webInterface.socketSend(httpResponse)
-  webInterface.socketSend("data: Hello!\n\n")
-  println("Hello message sent")
+  println("Connection established.")
 
 
   //

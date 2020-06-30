@@ -341,7 +341,7 @@ class PlotData(parms: PlotParms = null, tb:PlotModel = null, val disableThreshol
       }
       // If current element represent the last graph, send the json object to the web interface
       if (num==plottables.size-1) {
-        //Main.webInterface.socketSend(ujson.write(jsonFormat.value))
+        Main.webInterface.socketSend("data: " + ujson.write(jsonFormat.value) + "\n\n")
       }
       plotArr.arr.clear()
       for (line <- enclosurePlots) line.arr.clear()
