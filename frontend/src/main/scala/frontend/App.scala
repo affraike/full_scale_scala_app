@@ -504,19 +504,10 @@ object App {
         div(id := "plotTab", cls := "vtabcontent", display:= "none"),
         div(id := "traceTab", cls := "vtabcontent", display:= "none",
           div(overflow:="auto",
-            table(id := "traceTable",
-              thead(
-                th("1st Column"),
-                th("2nd Column")
-              ),
-              tbody(
-                td("bla"),
-                td("bla")
-              )
-            )
+            table(id := "traceTable")
           )
         ),
-        div(id := "threeDTab", cls := "vtabcontent", display:= "none",
+        div(id := "threeDtab", cls := "vtabcontent", display:= "none",
           div(id := "canvasPanel",
             div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
               span("3D panel not yet implemented"),

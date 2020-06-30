@@ -47,7 +47,7 @@ toAcumen.onerror = function(err) {
 acumenProgress.onmessage = (event) => {
   if (event.data.substring(0, 10) === '[PROGRESS]') {
     var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
-    var n = data.match(regex);
+    var n = event.data.match(regex);
     var m = regex.exec(n);
     handleMessage(m[1]);
   }
@@ -394,7 +394,7 @@ function  handleMessage(messageData) {
   catch (error) {
     // FIXME Sometime when data are sent in a small period of time, sockets do not intercept different messages.
     // var split = event.data.split(/\r/g);
-    console.error(error + "\nData was: " + event.data);
+    console.error(error + "\nData was: " + messageData);
   }
 }
 

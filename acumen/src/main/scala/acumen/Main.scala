@@ -299,6 +299,8 @@ object Main {
   val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
   val httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnexion: Keep-Alive\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
   webInterface.socketSend(httpResponse)
+  jsonProgress.write(httpResponse)
+  jsonProgress.flush()
   println("Connection established.")
 
 
