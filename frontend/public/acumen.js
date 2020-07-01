@@ -1,5 +1,5 @@
-const acumenProgress = new EventSource("http://localhost:9080")
-const toAcumen = new EventSource("http://localhost:9090")
+var acumenProgress = new ReconnectingEventSource("http://localhost:9080")
+var toAcumen = new ReconnectingEventSource("http://localhost:9090")
 var req = new XMLHttpRequest();
 var url = new URL('http://localhost:8080/api/acumen');
 
@@ -42,7 +42,7 @@ toAcumen.onmessage =  (event) => {
 
 toAcumen.onerror = function(err) { 
   console.log(err);
-}
+};
 
 acumenProgress.onmessage = (event) => {
   if (event.data.substring(0, 10) === '[PROGRESS]') {

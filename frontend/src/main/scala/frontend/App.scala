@@ -648,6 +648,9 @@ object App {
       src:="./plotly.min.js"
     ),
     script(
+      src:="./ReconnectingEventSource.min.js"
+    ),
+    script(
       src:="./acumen.js"
     )
   )
