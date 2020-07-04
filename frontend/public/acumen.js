@@ -1,11 +1,55 @@
-var acumenProgress = new ReconnectingEventSource("http://localhost:9080")
-var toAcumen = new ReconnectingEventSource("http://localhost:9090")
+var acumenProgress = null
+var toAcumen = null
 var req = new XMLHttpRequest();
 var url = new URL('http://localhost:8080/api/acumen');
 
 var CsrfToken = "9db1ee8c7716e13f728fb41204468758c921f2de-1593444589631-8234a413427e4b696e6d1873"
 
-toAcumen.onopen = (event) => {
+var framedString = '';
+var isFrame = false;
+function connectAcumen() {
+  toAcumen = new EventSource("http://localhost:9090");
+  toAcumen.onerror = function() {
+      toAcumen.close();
+  }
+  toAcumen.onmessage =  (event) => {
+    if (event.data.substring(0, 7) === '[FRAME]') {
+      framedString = event.data.substring(7);
+      isFrame = true;
+    }
+    else {
+      if (isFrame == true) {
+        if (event.data.substring(event.data.length - 5) === '[END]') {
+          framedString += event.data.substring(0, event.data.length - 5);
+          handleMessage(framedString);
+          framedString = '';
+          isFrame = false;
+        }
+        else {
+          framedString += event.data;
+        }
+      }
+      else {
+        handleMessage(event.data);
+      }
+    }
+  };
+}
+connectAcumen();
+
+let reconnectingAcumen = false;
+setInterval(() => {
+  if (toAcumen.readyState == EventSource.CLOSED) {
+      reconnectingAcumen = true;
+      console.log("reconnecting to Acumen socket...");
+      connectAcumen();
+  } else if (reconnectingAcumen) {
+      reconnectingAcumen = false
+      console.log("reconnected!");
+  }
+}, 3000);
+
+/*toAcumen.onopen = (event) => {
   url.searchParams.set('str', "[{\"type\": \"event\", \"event\": \"jsReady\"}]\r");
   req.open('POST', url, true);
   req.setRequestHeader("Csrf-Token", CsrfToken);
@@ -13,52 +57,38 @@ toAcumen.onopen = (event) => {
   req.onload = function(e) {
     console.log(e.data);
   };
-}
+}*/
 
-var framedString = '';
-var isFrame = false;
-toAcumen.onmessage =  (event) => {
-  if (event.data.substring(0, 7) === '[FRAME]') {
-    framedString = event.data.substring(7);
-    isFrame = true;
+function connectProgress() {
+  acumenProgress = new EventSource("http://localhost:9080");
+  acumenProgress.onerror = function() {
+    acumenProgress.close();
   }
-  else {
-    if (isFrame == true) {
-      if (event.data.substring(event.data.length - 5) === '[END]') {
-        framedString += event.data.substring(0, event.data.length - 5);
-        handleMessage(framedString);
-        framedString = '';
-        isFrame = false;
-      }
-      else {
-        framedString += event.data;
-      }
+  acumenProgress.onmessage = (event) => {
+    if (event.data.substring(0, 10) === '[PROGRESS]') {
+      var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
+      var n = event.data.match(regex);
+      var m = regex.exec(n);
+      handleMessage(m[1]);
     }
     else {
-      handleMessage(event.data);
+      console.log('Wrong progress data!');
     }
-  }
-};
+  };
+}
+connectProgress();
 
-toAcumen.onerror = function(err) { 
-  console.log(err);
-};
-
-acumenProgress.onmessage = (event) => {
-  if (event.data.substring(0, 10) === '[PROGRESS]') {
-    var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
-    var n = event.data.match(regex);
-    var m = regex.exec(n);
-    handleMessage(m[1]);
+let reconnectingProgress = false;
+setInterval(() => {
+  if (acumenProgress.readyState == EventSource.CLOSED) {
+      reconnectingProgress = true;
+      console.log("reconnecting to Progress socket...");
+      connectProgress();
+  } else if (reconnectingProgress) {
+      reconnectingProgress = false
+      console.log("reconnected!");
   }
-  else {
-    console.log('Wrong progress data!');
-  }
-};
-
-acumenProgress.onerror = function(err) {
-  console.log(err);
-};
+}, 3000);
 
 function  handleMessage(messageData) {
   try {
