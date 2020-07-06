@@ -3,16 +3,26 @@ var toAcumen = null
 var req = new XMLHttpRequest();
 var url = new URL('http://localhost:8080/api/acumen');
 
-var CsrfToken = "9db1ee8c7716e13f728fb41204468758c921f2de-1593444589631-8234a413427e4b696e6d1873"
+var CsrfToken = document.cookie.substring(11);
 
 var framedString = '';
 var isFrame = false;
 function connectAcumen() {
   toAcumen = new EventSource("http://localhost:9090");
+  /*toAcumen.onopen = (event) => {
+    url.searchParams.set('str', "[{\"type\": \"event\", \"event\": \"jsReady\"}]\r");
+    req.open('POST', url, true);
+    req.setRequestHeader("Csrf-Token", CsrfToken);
+    req.send();
+    req.onload = function(e) {
+      console.log(e.data);
+    };
+  }*/
   toAcumen.onerror = function() {
       toAcumen.close();
   }
   toAcumen.onmessage =  (event) => {
+    console.log(event.data)
     if (event.data.substring(0, 7) === '[FRAME]') {
       framedString = event.data.substring(7);
       isFrame = true;
@@ -48,16 +58,6 @@ setInterval(() => {
       console.log("reconnected!");
   }
 }, 3000);
-
-/*toAcumen.onopen = (event) => {
-  url.searchParams.set('str', "[{\"type\": \"event\", \"event\": \"jsReady\"}]\r");
-  req.open('POST', url, true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
-  req.send();
-  req.onload = function(e) {
-    console.log(e.data);
-  };
-}*/
 
 function connectProgress() {
   acumenProgress = new EventSource("http://localhost:9080");

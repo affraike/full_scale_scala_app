@@ -104,7 +104,7 @@ object App {
         div(
           display:= "flex",
           justifyContent:="center",
-          height:="100px",
+          /*height:="100px",*/
           div(cls := "loader-wheel")
         ),
         div(cls := "loader-text")
@@ -484,7 +484,7 @@ object App {
             button(id := "browserButton", cls := "ctablinks","Browser"
             )
           ),
-          div(id := "consoleTab", cls := "ctabcontent", height:="calc(100% - 70px)", overflow:="auto",
+          div(id := "consoleTab", cls := "ctabcontent", height:="345px", overflow:="scroll",
             ul(id := "consoleAreaList")
           ),
           div(id := "browserTab", cls := "ctabcontent", display:="none", height:="calc(100% - 70px)", overflow:="auto",
@@ -503,7 +503,8 @@ object App {
         ),
         div(id := "plotTab", cls := "vtabcontent", display:= "none"),
         div(id := "traceTab", cls := "vtabcontent", display:= "none",
-          div(overflow:="auto",
+          div(height:= "870px",
+            overflowY:= "scroll",
             table(id := "traceTable")
           )
         ),
