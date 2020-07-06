@@ -749,6 +749,20 @@ window.onload = function () {
   document.getElementById("browserButton").onclick = function () {
     changeCTab('browserTab', event);
   };
+  document.getElementById("dragAndDropButton").onclick = function () {
+    changeCTab('dropTab', event);
+  };
+  document.getElementById("dropTab").ondragover = function (ev) {
+    ev.preventDefault();
+  };
+  document.getElementById("dropTab").ondrop = function (ev) {
+    ev.preventDefault();
+    ev.dataTransfer.files[0].text().then(text => {
+      editor.focus();
+      editor.removeLines();
+      editor.insert(text);
+    });
+  };
   document.getElementById("plotButton").onclick = function () {
     url.searchParams.set('str', "[" + JSON.stringify(plotButton) + "]\r");
     req.open('POST', url, true);

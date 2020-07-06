@@ -482,13 +482,18 @@ object App {
             button(id := "consoleButton", cls := "ctablinks active","Console"
             ),
             button(id := "browserButton", cls := "ctablinks","Browser"
+            ),
+            button(id := "dragAndDropButton", cls := "ctablinks","Drag&Drop"
             )
           ),
           div(id := "consoleTab", cls := "ctabcontent", height:="345px", overflow:="scroll",
             ul(id := "consoleAreaList")
           ),
-          div(id := "browserTab", cls := "ctabcontent", display:="none", height:="calc(100% - 70px)", overflow:="auto",
+          div(id := "browserTab", cls := "ctabcontent", display:="none", height:="345px", overflow:="scroll",
             ul(id := "browserAreaList")
+          ),
+          div(id := "dropTab", cls := "ctabcontent", display:="none", height:="345px", width:= "calc(100% - 105px)"
+            , "Drop your files here !"
           )
         )
       ),
