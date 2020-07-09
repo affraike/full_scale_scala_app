@@ -15,11 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.{Random, Success, Try}
-import com.scalawarrior.scalajs.ace._
 import java.lang.Float.parseFloat
 import scala.util.{Try,Success,Failure}
-
-import plotly._, element._, layout._
 
 final case class AcumenInfo(action: String, file: String)
 
@@ -110,13 +107,11 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","File"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "newAction","New"
-              ),
-              button(`type` := "button", id := "openAction","Open"
-              ),
+              button(`type` := "button", id := "newAction","New"),
+              button(`type` := "button", id := "openAction","Open"),
               button(`type` := "button", id := "saveAction","Save"),
-              button(`type` := "button", id := "saveAsAction","Save as"
-              ),
+              button(`type` := "button", id := "saveAsAction","Save as"),
+              button(`type` := "button", id := "downloadAction","Download"),
               button(`type` := "button", id := "exportAction","Export Table"),
               button(`type` := "button", id := "recoverAction","Recover")
             )
@@ -367,14 +362,14 @@ object App {
           button(id := "threeDButton", cls := "vtablinks","_3D"
           )
         ),
-        div(id := "plotTab", cls := "vtabcontent", display:= "none"),
+        div(id := "plotTab", cls := "vtabcontent", display:= "none", height:= "870px", overflowY:= "scroll"),
         div(id := "traceTab", cls := "vtabcontent", display:= "none",
           div(height:= "870px",
             overflowY:= "scroll",
             table(id := "traceTable")
           )
         ),
-        div(id := "threeDtab", cls := "vtabcontent", display:= "none",
+        div(id := "threeDtab", cls := "vtabcontent", display:= "none", height:= "870px", overflowY:= "scroll",
           div(id := "canvasPanel",
             div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
               span("3D panel not yet implemented"),

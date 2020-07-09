@@ -584,6 +584,24 @@ window.onload = function () {
       console.log(e.data);
     };
   };
+  document.getElementById("downloadAction").onclick = function() {
+    var filename = document.getElementById("fileNameLabelText").innerHTML;
+    if (!filename.includes('.acm')) {
+      filename = filename + '.acm'
+    }
+    var data = editor.session.getValue();
+    var blob = new Blob([data], {type: 'text/csv'});
+    if(window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveBlob(blob, filename);
+    }else{
+      var elem = window.document.createElement('a');
+      elem.href = window.URL.createObjectURL(blob);
+      elem.download = filename;        
+      document.body.appendChild(elem);
+      elem.click();        
+      document.body.removeChild(elem);
+    }
+};
   document.getElementById("exportAction").setAttribute("onClick", "javascript: exportTable();");
   document.getElementById("undoAction").onclick = function () {
     editor.undo();
@@ -925,7 +943,7 @@ function stateChanged(state) {
     document.getElementById("stepMenuButton").disabled = false;
   }
   else {
-    document.getElementById("stepButton").disabled = false;
+    document.getElementById("stepButton").disabled = true;
     document.getElementById("stepMenuButton").disabled = true;
 
   }
