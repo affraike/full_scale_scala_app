@@ -32,8 +32,6 @@ final class HomeController @Inject()(
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
     with AcumenController {
-  
-  println("Is this action executed?")
 
   def index: Action[AnyContent] = assets.at("index.html")
 
@@ -71,7 +69,7 @@ final class HomeController @Inject()(
 
   def acumenAction(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     App.ui.deserializeSocketInput(str)
-    Ok("task completed: " + str)
+    Ok("data: task completed: " + str + "\n\n")
   }
 
   def todo: Action[AnyContent] = TODO

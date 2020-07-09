@@ -3,26 +3,17 @@ var toAcumen = null
 var req = new XMLHttpRequest();
 var url = new URL('http://localhost:8080/api/acumen');
 
+
 var CsrfToken = document.cookie.substring(11);
 
 var framedString = '';
 var isFrame = false;
 function connectAcumen() {
   toAcumen = new EventSource("http://localhost:9090");
-  /*toAcumen.onopen = (event) => {
-    url.searchParams.set('str', "[{\"type\": \"event\", \"event\": \"jsReady\"}]\r");
-    req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
-    req.onload = function(e) {
-      console.log(e.data);
-    };
-  }*/
   toAcumen.onerror = function() {
       toAcumen.close();
-  }
+  };
   toAcumen.onmessage =  (event) => {
-    console.log(event.data)
     if (event.data.substring(0, 7) === '[FRAME]') {
       framedString = event.data.substring(7);
       isFrame = true;
@@ -95,9 +86,19 @@ function  handleMessage(messageData) {
     var obj = JSON.parse(messageData);
     if (!Array.isArray(obj)) {
       switch (obj.event) {
+        case "firstRes":
+          url.searchParams.set('str', "[" + JSON.stringify(jsReady) + "]\r");
+          req.open('POST', url, true);
+          req.setRequestHeader("Csrf-Token", CsrfToken);
+          req.send();
+          req.onload = function(e) {
+            console.log(e.data);
+          };
         case "state":
           if (obj.state === "appReady") {
-            editor.session.getUndoManager().reset();
+            editor.setOptions({
+                readOnly: false
+            })
             document.getElementById("undoAction").disabled = true;   // Hack to disable button cause of init code.
             var loader = document.getElementById("loader");
             setTimeout(function () {
@@ -447,14 +448,17 @@ var confirmContinue = new function () {
   this.show = function (type) {
     var scButton = document.getElementById('saveAndContinue');
     var dcButton = document.getElementById('discardAndContinue');
+    var cButton = document.getElementById('cancelAndGoBack');
     switch (type) {
       case 'save':
         scButton.setAttribute("onClick", "javascript: getResponse('save', 'newAction');");
         dcButton.setAttribute("onClick", "javascript: getResponse('discard', 'newAction');");
+        cButton.setAttribute("onClick", "javascript: getResponse('cancel', 'newAction');");
         break;
       case 'open':
         scButton.setAttribute("onClick", "javascript: getResponse('save', 'openAction');");
         dcButton.setAttribute("onClick", "javascript: getResponse('discard', 'openAction');");
+        cButton.setAttribute("onClick", "javascript: getResponse('cancel', 'openAction');");
         break;
     }
     document.getElementById('promptPanel').style.display = '';
@@ -758,9 +762,10 @@ window.onload = function () {
   document.getElementById("dropTab").ondrop = function (ev) {
     ev.preventDefault();
     ev.dataTransfer.files[0].text().then(text => {
+      document.getElementById("fileNameLabelText").innerHTML = ev.dataTransfer.files[0].name.toString()
       editor.focus();
-      editor.removeLines();
-      editor.insert(text);
+      editor.selectAll();
+      editor.setValue(text);
     });
   };
   document.getElementById("plotButton").onclick = function () {
@@ -920,7 +925,7 @@ function stateChanged(state) {
     document.getElementById("stepMenuButton").disabled = false;
   }
   else {
-    document.getElementById("stepButton").disabled = true;
+    document.getElementById("stepButton").disabled = false;
     document.getElementById("stepMenuButton").disabled = true;
 
   }
@@ -1042,6 +1047,11 @@ function createChildNodes(file, parentNode) {
 /** Json and miscallenious objects */
 var enabledWhenStopped = [];
 var editedSinceLastSave = false;
+
+var jsReady = {
+  type: 'event',
+  event: 'jsReady'
+}
 
 var newAction = {
   type: 'action',

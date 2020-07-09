@@ -35,12 +35,6 @@ object App {
     .send()
     .map(_.body)
 
-  //var stocks2 = new EventSource("http://localhost:9080")
-  //stocks2.onmessage = (event: MessageEvent) => {
-  //  var data = event.data
-  //  dom.console.log(data.toString)
-  //}
-
   //Toogle button communication
   val postBus2: EventBus[String] = new EventBus()
 
@@ -168,32 +162,7 @@ object App {
                   span(marginRight:="auto","Font"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "fontMenu",
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="monospaced", checked := false),
-                    "Monospaced"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="consolas", checked := true),
-                    "Consolas"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="courierView", checked:= false),
-                    "Courier View"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="lucidaConsole", checked := false),
-                    "Lucida Console"
-                    )
-                  )
-                )
+                ul(cls := "sub-menu", id := "fontMenu")
               ),
               hr(),
               div(
@@ -203,32 +172,7 @@ object App {
                   span(marginRight:="auto","Theme"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "themeMenu",
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="dreamTheme", checked := false),
-                    "dreamweaver"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="textMateTheme", checked := false),
-                    "textMate"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="ambianceTheme", checked := false),
-                    "ambiance"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "font", id:="draculaTheme", checked := true),
-                    "dracula"
-                    )
-                  )
-                )
+                ul(cls := "sub-menu", id := "themeMenu")
               ),
               label(
                 input(`type` := "checkbox", id := "lineNumbers", checked := true
@@ -303,20 +247,7 @@ object App {
                   span(marginRight:="auto","Traditionnal"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "traditionalSemantics",
-                  li(
-                    label(
-                    input(`type` := "radio", name := "traditional", selected := false),
-                    "2015 Reference"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "traditional", selected := false),
-                    "2015 Optimized"
-                    )
-                  )
-                )
+                ul(cls := "sub-menu", id := "traditionalSemantics")
               ),
               div(cls := "vertical-nav",
                 div(
@@ -324,32 +255,7 @@ object App {
                   span(marginRight:="auto","Enclosure"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "enclosureSemantics",
-                  li(
-                    label(
-                    input(`type` := "radio", name := "enclosure", selected := true),
-                    "2015 Enclosure"
-                    )
-                  ),
-                  hr(),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "enclosure", selected := false),
-                    "2013 PWL"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "enclosure", selected := false),
-                    "2013 EVT"
-                    )
-                  ),
-                  hr(),
-                  label(
-                  input(`type` := "checkbox", id := "simulatorFields"),
-                  span("Simulator Fields")
-                  )
-                )
+                ul(cls := "sub-menu", id := "enclosureSemantics")
               ),
               div(cls := "vertical-nav",
                 div(
@@ -357,52 +263,7 @@ object App {
                   span(marginRight:="auto","Deprecated"),
                   span(margin:="auto 10px", color:="white","›")
                 ),
-                ul(cls := "sub-menu", id := "deprecatedSemantics",
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2014 Reference"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2014 Optimized"
-                    )
-                  ),
-                  hr(),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2013 Reference"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2013 Optimized"
-                    )
-                  ),
-                  hr(),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2012 Reference"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2012 Optimized"
-                    )
-                  ),
-                  li(
-                    label(
-                    input(`type` := "radio", name := "deprecated", selected := false),
-                    "2012 Parallel"
-                    )
-                  )
-                )
+                ul(cls := "sub-menu", id := "deprecatedSemantics")
               ),
               hr(),
               label(

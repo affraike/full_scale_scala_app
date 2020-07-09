@@ -19,12 +19,7 @@ object FrontendSettings {
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.5" % Test,
     // laminar
     libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2",
-    //ace
-    libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.4",
-    //plotly
-    libraryDependencies += "org.plotly-scala" %%% "plotly-render" % "0.7.2",
-    // socket
-    libraryDependencies += "io.scalajs.npm" %%% "express-ws" % "0.4.2",
+
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     version in webpack := "4.29.6",

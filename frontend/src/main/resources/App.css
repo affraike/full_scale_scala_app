@@ -83,6 +83,63 @@ input[type=range]::-moz-focus-outer {
 border: 0;
 }
 
+#loader {
+width: 100%;
+align-items: center;
+background-color: black;
+display: flex;
+height: 100%;
+justify-content: center;
+margin: 0;
+position: absolute;
+transition: opacity 1000ms;
+z-index: 99;
+}
+
+.loader-wheel {
+animation: spin 1s infinite linear;
+border: 2px solid rgba(30, 30, 30, 0.5);
+border-left: 4px solid #fff;
+border-radius: 50%;
+height: 50px;
+margin-bottom: 10px;
+width: 50px;
+}
+
+.loader-text {
+color: #fff;
+font-family: arial, sans-serif;
+}
+
+.loader-text:after {
+content: 'Acumen is loading';
+animation: load 2s linear infinite;
+}
+
+@keyframes spin {
+0% {
+    transform: rotate(0deg);
+}
+100% {
+    transform: rotate(360deg);
+}
+}
+
+@keyframes load {
+0% {
+    content: 'Acumen is loading';
+}
+33% {
+    content: 'Acumen is loading.';
+}
+67% {
+    content: 'Acumen is loading..';
+}
+100% {
+    content: 'Acumen is loading...';
+}
+}
+
 .navbar {
 background-color: #333;
 display: flex;

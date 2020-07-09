@@ -236,7 +236,7 @@ object Main {
     } else {
       (if (positionalArgs.isEmpty) "ui" else positionalArgs(0)) match {
         case "ui" =>
-          ui.App.init
+          ui.GraphicalMain.top
         case "examples" | "record-reference-outputs" =>
           examples()
         case _ =>
@@ -255,17 +255,17 @@ object Main {
         for (frame <- splittedString) {
           //println("Split length: " + frame.length)
           if (counter==0) {
-            outputStream.write("[FRAME]" + frame)
+            outputStream.write("data: [FRAME]" + frame.substring(6) + "\n\n")
             //outputStream.newLine()
             outputStream.flush()
           }
           else if (counter==splittedString.length-1) {
-            outputStream.write(frame + "[END]")
+            outputStream.write("data: " + frame.substring(0, frame.length - 2) + "[END]\n\n")
             //outputStream.newLine()
             outputStream.flush()
           }
           else {
-            outputStream.write(frame)
+            outputStream.write("data: " + frame + "\n\n")
             //outputStream.newLine()
             outputStream.flush()
           }
@@ -302,7 +302,6 @@ object Main {
   jsonProgress.write(httpResponse)
   jsonProgress.flush()
   println("Connection established.")
-
 
   //
   // Other stuff that should eventually be factored out
