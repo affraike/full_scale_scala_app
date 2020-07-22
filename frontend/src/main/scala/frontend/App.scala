@@ -358,7 +358,8 @@ object App {
           div(id := "canvasPanel",
             div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
               span("3D panel not yet implemented"),
-            )
+            ),
+            canvas(id:= "plottingCanvas")
           ),
           div(id := "threedControls",
             div(id := "threedViews",
@@ -499,6 +500,9 @@ object App {
     ),
     script(
       src:="./acumen.js"
+    ),
+    script(
+      src:="https://cdn.babylonjs.com/babylon.max.js"
     )
   )
 }

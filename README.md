@@ -13,6 +13,24 @@ The frontend uses the Laminar framework for UI rendering.
 ## Deploy
 
 The app is hosted on Heroku. In order to deploy,
+
+First, make sure that the file 'backend/conf/application.conf' is in this configuration :
+```
+slick.dbs.default {
+  db = {
+    url = ${?JDBC_DATABASE_URL}
+    driver = "org.postgresql.Driver"
+    #url="jdbc:postgresql://localhost:5432/testDB"
+    #user="postgres"
+    #password="super387"
+  }
+  profile = "slick.jdbc.PostgresProfile$"
+  numThreads = 1
+  driver="slick.driver.PostgresDriver$"
+}
+```
+
+Then, in a terminal,
 ```
 # Login to Heroku
 heroku login
@@ -37,6 +55,24 @@ heroku run bash --app APPNAME
 
 ## Dev environment
 To compile locally the full application, you must first clone the repository:
+
+First, make sure that the file 'backend/conf/application.conf' is in this configuration :
+```
+slick.dbs.default {
+  db = {
+    #url = ${?JDBC_DATABASE_URL}
+    driver = "org.postgresql.Driver"
+    url="jdbc:postgresql://localhost:5432/testDB"
+    user="postgres"
+    password="super387"
+  }
+  profile = "slick.jdbc.PostgresProfile$"
+  numThreads = 1
+  driver="slick.driver.PostgresDriver$"
+}
+```
+
+Then, in a terminal,
 ```
 git clone https://github.com/affraike/full_scale_scala_app.git
 cd full_scale_scala_app

@@ -447,6 +447,11 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
+  // Get the canvas DOM element
+  var canvas = document.getElementById('plottingCanvas');
+  // Load the 3D engine
+  var engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true});
+
   document.getElementById("launchToggle").onclick = function() {
     document.getElementById("loader").style.display = "flex";
 
