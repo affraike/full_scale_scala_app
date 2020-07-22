@@ -262,7 +262,7 @@ class PlotData(parms: PlotParms = null, tb:PlotModel = null, val disableThreshol
   val plottables = if (tb == null) Nil else tb.getPlottables(parms)
   val disabled = plottables.size >= disableThreshold
 
-  if (plottables.size == 0 || disabled) ()
+  if (plottables.size == 0 || disabled) {}
   else {
     var num = 0                         // Keeps track of current graph item
     val jsonFormat = ujson.Arr()        // Complete json file for plotting
@@ -341,7 +341,8 @@ class PlotData(parms: PlotParms = null, tb:PlotModel = null, val disableThreshol
       }
       // If current element represent the last graph, send the json object to the web interface
       if (num==plottables.size-1) {
-        Main.webInterface.socketSend("data: " + ujson.write(jsonFormat.value) + "\n\n")
+        Main.addBufferList(ujson.write(jsonFormat.value))
+        //Main.webInterface.socketSend("data: " + ujson.write(jsonFormat.value) + "\n\n")
       }
       plotArr.arr.clear()
       for (line <- enclosurePlots) line.arr.clear()

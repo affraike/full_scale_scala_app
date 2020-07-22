@@ -1,0 +1,56 @@
+// Switched converter pole
+//
+// Author:  Anita Sant'Anna, 2012
+//
+// Run this example, view Plot
+
+// This example models a switched converter pole which can
+// deliver variable voltage (power) to a circuit. 
+// The voltage delivered by the converter depends on the 
+// source voltage, the trigger signal and the control voltage
+// as shown below:
+// 
+//   if Vtri >= Vca 
+//     Van = Vd 
+//   else 
+//     Van = 0
+//   end
+//   
+//   where:
+//     Vtri: trigger signal (saw-tooth wave)  
+//     Vca:  control voltage (constant)
+//     Van:  voltage delivered to the circuit by the converter
+//     Vd:   source voltage, can be AC or DC
+//
+// trigger signal, saw-tooth wave between zero and 10, frequency 1KHz
+
+model TriggerSource() = 
+initially 
+  Vtri = 0 , Vtri' = 1000
+always  
+  if Vtri>=10 then Vtri=0 else Vtri'=1000
+
+model SwitchedConverter(Vd,Vca) = 
+initially 
+  Van  =  0 , 
+  trigger  =  create TriggerSource() 
+always     
+  if trigger.Vtri>=Vca then Van = Vd 
+  else  Van = 0 
+
+// differential equation describing the circuit being powered by the converter
+model EquivalentCircuit(R,L,E) = 
+initially 
+  i = 0 , i' = 0 , 
+  converter  =  create SwitchedConverter(100,8) 
+always
+   i' = converter.Van/L - E/L - (R/L)*i
+
+model Main(simulator) = 
+initially 
+  circuit  =  create EquivalentCircuit(0.5,0.012,40) 
+always
+  // simulator parameters
+  simulator.timeStep+ = 0.0001 ,        
+  simulator.endTime+ = 0.1 
+

@@ -53,7 +53,7 @@ class PlotPanel(pub:Publisher) extends Panel
     else
       null
   }
-  val plotI = new PlotInput(getModel,mkBuffer)
+  val plotI = new PlotInput(getModel)
 
   override def paint(g : Graphics2D) = {
     if (model == null) clear
@@ -62,7 +62,7 @@ class PlotPanel(pub:Publisher) extends Panel
 
   private def clear = {
     pd = new PlotData()
-    pi = new PlotImage(pd, mkBuffer)
+    //pi = new PlotImage(pd, mkBuffer)
     hoveredBox = None
     dotX = 0.0d
     dotY = None
@@ -234,9 +234,9 @@ class PlotPanel(pub:Publisher) extends Panel
       //println("Got PlotReady Message!")
       model = m.model
       pd = m.data
-      pi = m.image
-      if (m.newPlot)
-        resetViewPort(pi.viewPort)
+      //pi = m.image
+      //if (m.newPlot)
+      //  resetViewPort(pi.viewPort)
       hoveredBox = None
       repaint
       // Don't think updateEnabled is needed here -- kevina
@@ -387,7 +387,7 @@ class PlotPanel(pub:Publisher) extends Panel
   def render(file:File, w:Int, h:Int) = if (enabled) {
     // FIXME: This should't be done on the EDT...
     val buf = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
-    new PlotImage(pd, buf, plotI.plotStyle, viewPort)
+    //new PlotImage(pd, buf, plotI.plotStyle, viewPort)
     ImageIO.write(buf, "PNG", file)
   }
 }

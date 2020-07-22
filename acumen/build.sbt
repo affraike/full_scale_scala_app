@@ -47,7 +47,7 @@ resolvers ++= Seq(
 unmanagedResources in Compile ++= Seq("AUTHORS","LICENSE","LICENSE-Rice","LICENSE-AIC").map(new File(_))
 
 jarName in assembly := "acumen.jar"
-test in assembly := {} // skip tests during packaging
+sbt.Keys.test in assembly := {} // skip tests during packaging
 assemblyMergeStrategy in assembly := { 
   case PathList(ps @ _*) if Assembly.isReadme(ps.last) || Assembly.isLicenseFile(ps.last) =>
     MergeStrategy.rename

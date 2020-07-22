@@ -15,6 +15,8 @@ import scala.math._
 import scala.swing.{Label, Publisher, Swing, TextField}
 import scala.collection.mutable
 
+import acumen.Main.addBufferList
+
 /* 3D visualization panel */
 class ThreeDView extends JPanel {
 
@@ -1441,7 +1443,8 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
             slider.setProgress3D(percentage)
             slider.setTime(_3DTimeTag(currentFrame).toFloat)
             if (percentage==100) {
-              acumen.Main.webInterface.socketSend("data: " + ujson.write(threedFrames) + "\n\n")
+              addBufferList(ujson.write(threedFrames))
+              //acumen.Main.webInterface.socketSend("data: " + ujson.write(threedFrames) + "\n\n")
               threedFrames.arr.clear()
               threedFrames.arr.append(ujson.Obj("action" -> "threedAllFrames"))
             }

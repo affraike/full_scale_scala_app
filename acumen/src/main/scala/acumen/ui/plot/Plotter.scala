@@ -21,8 +21,7 @@ class TableInput(val model : () => TraceModel)
   @volatile var enabled = false
 }
 
-class PlotInput(val model : () => PlotModel,
-                val buffer : () => BufferedImage) 
+class PlotInput(val model : () => PlotModel) 
 {
   @volatile var enabled = false
   @volatile var parms = PlotParms()
@@ -111,8 +110,9 @@ class Plotter(tableI: TableInput, plotI: PlotInput)
   }
 
   def repaint(vp: Rectangle2D = null) = {
-    var buf = plotI.buffer()
-    val pi = new PlotImage(pd, buf, plotI.plotStyle, vp)
+    //var buf = plotI.buffer()
+    //val pi = new PlotImage(pd, buf, plotI.plotStyle, vp)
+    val pi = null
     App ! PlotReady(pm,pd,pi,vp == null)
   }
 }

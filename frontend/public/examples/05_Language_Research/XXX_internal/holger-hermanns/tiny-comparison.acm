@@ -1,0 +1,66 @@
+
+
+// Example 1
+// Gul:  Try to write this in Quartex
+/*
+model Main (simulator) = 
+initially 
+  x=0, x'=0
+always
+  x' = 1
+
+// In Modest and timed automata, the program would
+// be just
+
+// Modest:
+var x=0; 
+
+process Bla(){
+    invariant(der(x) = 1)
+}
+
+Bla();
+*/
+
+/*
+// Example 2
+model Main (simulator) =
+initially 
+  x=1, x'=0 
+always
+  x' = x
+
+
+// Modest:
+var x=0; 
+
+process Bla(){
+    invariant(der(x) = x)
+}
+
+Bla();
+*/
+
+// Example 3
+model Main (simulator) = 
+initially 
+  x = 1 , x' = 0 
+always
+
+  x' = 1 ,
+  if x>=5 then // The Acumen numerical "hack" for x=5
+    x+ =0
+  noelse
+
+ 
+
+  // Modest:
+//  var x=0 , 
+//
+//  process Bla(){
+//    invariant(der(x) = x)
+//    when (x>=5) invariant (x<=5) {=  x=0  =} ,
+//  }
+
+//Bla() ,
+

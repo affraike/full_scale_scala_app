@@ -8,9 +8,11 @@ GET     /                               controllers.HomeController.index
 GET     /api/hello                      controllers.HomeController.hello
 POST    /api/hello                      controllers.HomeController.helloNbr(nbr: Int)
 
-POST    /api/com                    controllers.HomeController.changeAcumenState(str: String)
-POST    /api/init                   controllers.HomeController.initAcumen
-POST    /api/acumen                 controllers.HomeController.acumenAction(str: String)
+POST    /api/com                        controllers.HomeController.changeAcumenState(str: String)
+POST    /api/init                       controllers.HomeController.initAcumen
+POST    /api/acumen                     controllers.HomeController.acumenAction
+
+GET     /api/buffer                     controllers.HomeController.getAcumenMessage
 
 # Serve static assets under public directory. KEEP THIS ROUTE AT THE END OF THIS FILE.
 GET     /*file                      controllers.HomeController.assetOrDefault(file)

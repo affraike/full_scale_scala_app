@@ -16,6 +16,10 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext}
 
+import play.api.libs.streams.ActorFlow
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+
 import acumen.Main
 import acumen.ui._
 
@@ -28,7 +32,7 @@ final class HomeController @Inject()(
     config: Configuration,
     protected val dbConfigProvider: DatabaseConfigProvider,
     cc: ControllerComponents
-)(implicit val ec: ExecutionContext)
+)(implicit val ec: ExecutionContext, system: ActorSystem, mat: Materializer)
     extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
     with AcumenController {
@@ -63,13 +67,23 @@ final class HomeController @Inject()(
 
   def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     setStateAcumen(str)
-    Main.webInterface.socketSend("data: Hey!\n\n")
     Ok("Acumen state changed to " + str)
   }
 
-  def acumenAction(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+  def getAcumenMessage(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    if (!Main.waitingList.isEmpty){
+      var pop = Main.waitingList(0)
+      Main.waitingList.remove(0)
+      Ok(pop)
+    } else {
+      Ok("Buffer is empty")
+    }
+  }
+
+  def acumenAction(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val str = request.body.asText.get.toString()
     App.ui.deserializeSocketInput(str)
-    Ok("data: task completed: " + str + "\n\n")
+    Ok("task completed: " + str)
   }
 
   def todo: Action[AnyContent] = TODO

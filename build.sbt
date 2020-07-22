@@ -37,7 +37,7 @@ lazy val acumen = (project in file("./acumen"))
       ("snapshots" at "http://oss.sonatype.org/content/repositories/snapshots").withAllowInsecureProtocol(true),
       ("releases"  at "http://oss.sonatype.org/content/repositories/releases").withAllowInsecureProtocol(true)
     ),
-      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   //  BackendSettings(),
    // BackendSettings.herokuSettings(),
   //  libraryDependencies += guice // dependency injection

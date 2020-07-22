@@ -57,13 +57,17 @@ class Controller extends DaemonActor {
   }
 
   var progressTime = -1
+  var milestones = List(0, 25, 50, 75, 100)
   protected[ui] def updateProgress(s: GStore) = {
     val time = getTime(s)
     val endTime = getEndTime(s)
     if ((time * 100 / endTime).toInt != progressTime) {
       progressTime = (time * 100 / endTime).toInt
-      Main.jsonProgress.write("data: " + "[PROGRESS]" + ujson.write(ujson.Obj("event" -> "progress", "data" -> ujson.Num(progressTime))) + "[/PROGRESS]\n" + "\n\n")
-      Main.jsonProgress.flush()
+      if (milestones.contains(progressTime)){
+        Main.addBufferList("[PROGRESS]" + ujson.write(ujson.Obj("event" -> "progress", "data" -> ujson.Num(progressTime))) + "[/PROGRESS]\n")
+      }
+      //Main.jsonProgress.write("data: " + "[PROGRESS]" + ujson.write(ujson.Obj("event" -> "progress", "data" -> ujson.Num(progressTime))) + "[/PROGRESS]\n" + "\n\n")
+      //Main.jsonProgress.flush()
     }
   }
 

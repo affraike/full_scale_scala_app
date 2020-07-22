@@ -29,7 +29,7 @@ object BackendSettings {
   def herokuSettings(): Seq[Def.Setting[_]] = settings(
     herokuAppName in Compile := "acumen-env",
     herokuProcessTypes in Compile := Map(
-      "web" -> "target/universal/stage/bin/backend -Dhttp.port=$PORT" // command for Heroku to launch the server
+      "web" -> "target/universal/stage/bin/backend -Dhttp.port=$PORT -Djava.awt.headless=true" // command for Heroku to launch the server
       //"worker" -> "java -jar target/universal/stage/lib/my-worker.jar"
     ),
     herokuIncludePaths in Compile := Seq(

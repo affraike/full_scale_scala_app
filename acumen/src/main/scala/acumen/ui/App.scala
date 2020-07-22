@@ -83,6 +83,7 @@ class App extends SimpleSwingApplication {
   def deserializeSocketInput(input: String): Unit = {
     try {
       val jsonString = ujson.read(input)
+      println("request: " + jsonString)
       jsonString(0)("type").str match {
         case "action" =>
           jsonString(0)("action").str match {
@@ -152,6 +153,7 @@ class App extends SimpleSwingApplication {
               views.selection.index = 0                       // FIXME This should be deleted - Sotiris
               //plotView.plotPanel.plotter ! plot.Replot      // FIXME Probably enable something like this - Sotiris
               selectedView = viewsCollection(0)
+              plotView.plotPanel.tableI.enabled = false
             case "traceTab" =>
               selectedView = viewsCollection(1)
               if (selectedView.equals(viewsCollection(1)) && App.ui.controller.model != null) {
@@ -164,6 +166,7 @@ class App extends SimpleSwingApplication {
             case "threeDtab" =>
               views.selection.index = 1
               selectedView = viewsCollection(2)
+              plotView.plotPanel.tableI.enabled = false
           }
         case "event" =>
           jsonString(0)("event").str match {
@@ -171,8 +174,11 @@ class App extends SimpleSwingApplication {
               filetree.serializeFileTree(Files.currentDir)      // Serialize fileTree
               codeArea.sendInitCodeArea()                       // Serialize codeArea
               constructSemanticsItems()                         // Serialize semantics menu
-              if (Main.extraPasses.contains("normalize")) { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "enableNormalize")) + "\n\n") }
-              Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> "appReady")) + "\n\n")
+              if (Main.extraPasses.contains("normalize")) { /*Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "enableNormalize")) + "\n\n")*/  
+                Main.addBufferList(ujson.write(ujson.Obj("event" -> "enableNormalize")))
+              }
+              //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> "appReady")) + "\n\n")
+              Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> "appReady")))
           }
         case "codeUpdate" =>
           codeArea.updateCodeText(jsonString(0)("text").str)
@@ -182,7 +188,8 @@ class App extends SimpleSwingApplication {
       }
     }
     catch {
-      case x: Exception =>  //println(x.getCause.toString)
+      case x: Exception =>  
+        println(x.getCause.toString)
         println("Json error: " + input)
     }
   }
@@ -221,9 +228,11 @@ class App extends SimpleSwingApplication {
               case st: State =>
                 st match {
                   case _:App.Ready =>
-                    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
+                    Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)))
+                    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
                   case _:App.Playing =>
-                    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
+                    Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)))
+                    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "state", "state" -> st.toString)) + "\n\n")
                   case _ =>
                 }
               case _ =>
@@ -287,7 +296,8 @@ class App extends SimpleSwingApplication {
       else semanticsGroup.obj.put("deprecated", semanticsData)
       semanticsJson.arr.append(semanticsGroup.value)
     }
-    Main.webInterface.socketSend("data: " + ujson.write(semanticsJson) + "\n\n")
+    Main.addBufferList(ujson.write(semanticsJson))
+    //Main.webInterface.socketSend("data: " + ujson.write(semanticsJson) + "\n\n")
   }
 
   //**************************************
@@ -540,6 +550,7 @@ class App extends SimpleSwingApplication {
     controller ! Stop
     actor ! EXIT
     quit
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> "appExit")))
   }
 
   def withErrorReporting(action: => Unit): Unit = {
@@ -605,13 +616,15 @@ class App extends SimpleSwingApplication {
     } else if (!threeDtab.checkBoxState("matchWallClock")) {
       threeDtab.setCheckBoxState(true, "matchWallClock")
     }
-    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStarted", "link" -> (IPADDRESS + ":8000/index"))) + "\n\n")
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "serverStarted", "link" -> (IPADDRESS + ":8000/index"))))
+    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStarted", "link" -> (IPADDRESS + ":8000/index"))) + "\n\n")
   }
 
   def stopServer(): Unit = {
     resetDevice()
     BuildHost.BuildHost.stop()
-    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStopped")) + "\n\n")
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "serverStopped")))
+    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "serverStopped")) + "\n\n")
   }
 
   def resetDevice(): Unit = {
@@ -668,13 +681,17 @@ class App extends SimpleSwingApplication {
         if (modelFinished && !threeDtab.checkBoxState("realTime")) {
           views.selectThreeDView()
           selectedView = viewsCollection(2)
-          Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")) + "\n\n")
+          plotView.plotPanel.tableI.enabled = false
+          Main.addBufferList(ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")))
+          //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")) + "\n\n")
           threeDtab.play()
         }
       } else if (selectedView.equals(viewsCollection(2))) {
         views.selectPlotView()
         selectedView = viewsCollection(0)
-        Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "plotView")) + "\n\n")
+        plotView.plotPanel.tableI.enabled = false
+        Main.addBufferList(ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "plotView")))
+        //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "plotView")) + "\n\n")
       }
   }
 
@@ -696,7 +713,8 @@ class App extends SimpleSwingApplication {
       rowArr.arr.clear()
     }
     jsonFormat.arr.append(tableArr)
-    Main.webInterface.socketSend("data: " + ujson.write(jsonFormat) + "\n\n")
+    Main.addBufferList(ujson.write(jsonFormat))
+    //Main.webInterface.socketSend("data: " + ujson.write(jsonFormat) + "\n\n")
   }
 
   def confirmSave(c: java.awt.Component, f:File) = {
@@ -783,6 +801,8 @@ class App extends SimpleSwingApplication {
 object App {
   def init = {
     new App // the initialization will set the members below
+    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "firstRes")) + "\n\n")
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "firstRes")))
   }
 
   var ui: App = null

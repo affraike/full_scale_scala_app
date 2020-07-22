@@ -23,14 +23,6 @@ final case class AcumenInfo(action: String, file: String)
 object App {
 
   private val css = AppCSS
-  dom.console.log(css.asInstanceOf[js.Object])
-
-  // Connexion to Acumen Sockets
-  var connecting = boilerplate
-    .response(asStringAlways)
-    .post(HttpClient.path("init"))
-    .send()
-    .map(_.body)
 
   //Toogle button communication
   val postBus2: EventBus[String] = new EventBus()
@@ -54,43 +46,26 @@ object App {
     }
   }
 
-  // Frontend/Backend communication
-  val acumenBus: EventBus[String] = new EventBus()
-
-  val acumenAnswer: EventStream[String] = acumenBus.events.flatMap(
-    str =>
-      EventStream.fromFuture(
-        boilerplate
-          .response(asStringAlways)
-          .post(HttpClient.path("acumen").param("str", str.toString))
-          .send()
-          .map(_.body)
-      )
-  )
+  def sendBackend(requestPath: String, msg: String): Unit = {
+    if (msg == ""){
+      boilerplate
+        .response(asStringAlways)
+        .post(HttpClient.path(requestPath))
+        .send()
+        .map(_.body)
+    }else{
+      boilerplate
+        .response(asStringAlways)
+        .post(HttpClient.path(requestPath).param("msg", msg.toString))
+        .send()
+        .map(_.body)
+    }
+  }
 
   // Handle API rendering
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
-    div(display:= "none",
-      h2("Communication Backend ↔ Acumen works ?"),
-      label(
-        cls:="switch",
-        input(
-          typ:="checkbox",
-          id:="launchToggle",
-          inContext(
-          thisElem =>
-            onClick.mapTo(change(thisElem.ref.checked)) --> postBus2.writer,
-          )
-        ),
-        span(
-          cls:="sliderToggle round",
-        )
-      ),
-      span("Returned: ", child <-- returned2.map(identity[String])),
-      p("Acumen: ", child <-- acumenAnswer.map(identity[String]))
-    ),
-    div(id := "loader",
+    div(id := "loader", display := "none",
       div(
         div(
           display:= "flex",
@@ -102,6 +77,16 @@ object App {
       )
     ),
     div(cls := "navbar",
+      label(
+        cls:="switch",
+        input(
+          typ:="checkbox",
+          id:="launchToggle",
+        ),
+        span(
+          cls:="sliderToggle round",
+        )
+      ),
       div(id := "navbarMenu",
         ul(
           li(cls := "navMenuItem",

@@ -14,7 +14,7 @@ object Files {
   private def _now = _saved + File.separator + timeTag + ".acm"
 
   val currentDir = {
-    val md = new File("examples")
+    val md = new File("./public/examples")
     if (md.exists()) md
     else new File(".")
   }

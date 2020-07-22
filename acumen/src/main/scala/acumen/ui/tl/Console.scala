@@ -9,11 +9,17 @@ class Console {
   var lastMessage: Msg = _
 
   def serializeMessage(msgType: String, textToSend: String = null, location: String = null, delOld: Boolean = false): Unit = {
-    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "console",
+    val str = ujson.write(ujson.Obj("event" -> "console",
       "data" -> ujson.Arr(msgType,
         if (textToSend != null) textToSend else ujson.Null,
         if (location != null) location else ujson.Null,
-        if (delOld) ujson.True else ujson.False))) + "\n\n")
+        if (delOld) ujson.True else ujson.False)))
+    Main.addBufferList(str)
+    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "console",
+    //  "data" -> ujson.Arr(msgType,
+    //    if (textToSend != null) textToSend else ujson.Null,
+    //    if (location != null) location else ujson.Null,
+    //    if (delOld) ujson.True else ujson.False))) + "\n\n")
   }
 
   def append(instr: Instruction): Unit = instr match {

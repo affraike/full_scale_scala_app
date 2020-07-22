@@ -14,8 +14,14 @@ class CodeArea {
 
   var codeText = "";
   def updateCodeText(txt: String): Unit = codeText = txt
-  def sendInitCodeArea():Unit           = { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))) + "\n\n") }
-  def sendCodeArea(text: String):Unit   = { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> text)) + "\n\n") }
+  //def sendInitCodeArea():Unit           = { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))) + "\n\n") }
+  def sendInitCodeArea():Unit           = { 
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))))
+    }
+  //def sendCodeArea(text: String):Unit   = { Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> text)) + "\n\n") }
+  def sendCodeArea(text: String):Unit   = { 
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "codeArea", "text" -> text)))
+    }
 
   val PROMPT_CANCEL = "Cancel"
   val PROMPT_SAVE_AND_CONTINUE = "Save and continue"
@@ -73,9 +79,11 @@ class CodeArea {
     currentFile = f
     currentFile match {
       case Some(f) =>
-        Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "setFilename", "data" -> f.getName)) + "\n\n")
+        Main.addBufferList(ujson.write(ujson.Obj("event" -> "setFilename", "data" -> f.getName)))
+        //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "setFilename", "data" -> f.getName)) + "\n\n")
       case None    =>
-        Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "setFilename", "data" -> "[Untitled]")) + "\n\n")
+        Main.addBufferList(ujson.write(ujson.Obj("event" -> "setFilename", "data" -> "[Untitled]")))
+        //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "setFilename", "data" -> "[Untitled]")) + "\n\n")
     }
     notifyPathChangeListeners
   }
@@ -91,7 +99,8 @@ class CodeArea {
 
   def newFile: Unit = withErrorReporting {
     setCurrentFile(None)
-    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))) + "\n\n")
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))))
+    //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "codeArea", "text" -> templates(TEMPLATE_STUB))) + "\n\n")
   }
 
   def loadFile(file: File): Unit = {

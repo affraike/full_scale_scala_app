@@ -369,7 +369,9 @@ class ThreeDData extends Publisher {
       _3DData += frameNumber -> null
     if (_3DData(frameNumber) != null && !App.ui.selectedView.equals(App.ui.viewsCollection(2))) {
       App.ui.selectedView = App.ui.viewsCollection(2)
-      Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")) + "\n\n")
+      App.ui.plotView.plotPanel.tableI.enabled = false
+      Main.addBufferList(ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")))
+      //Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "viewChange", "selectView" -> "threedView")) + "\n\n")
       App.ui.views.selectThreeDView()
     }
     frameNumber += 1

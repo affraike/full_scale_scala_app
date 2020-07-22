@@ -10,7 +10,7 @@ import PassManager._
 import benchTool._
 import java.net.{ServerSocket, Socket}
 import acumen.interpreters.Common.paramModelTxt
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 object Main {
 
@@ -236,7 +236,7 @@ object Main {
     } else {
       (if (positionalArgs.isEmpty) "ui" else positionalArgs(0)) match {
         case "ui" =>
-          ui.GraphicalMain.top
+          ui.App.init
         case "examples" | "record-reference-outputs" =>
           examples()
         case _ =>
@@ -283,25 +283,50 @@ object Main {
     }
   }
 
-  var progressPortNo: Int = 9080
-  var dataPortNo: Int = 9090
-  var nodeServerSocket: ServerSocket = new ServerSocket(dataPortNo)
-  var progressServerSocket: ServerSocket = new ServerSocket(progressPortNo)
-  println("Waiting connection on ports " + progressPortNo + "," + dataPortNo)
-  val nodeSocket: Socket = nodeServerSocket.accept()
-  val progressSocket: Socket = progressServerSocket.accept()
+  //var progressPortNo: Int = 9080
+  //var dataPortNo: Int = 9090
+  //var nodeServerSocket: ServerSocket = new ServerSocket(dataPortNo)
+  //var progressServerSocket: ServerSocket = new ServerSocket(progressPortNo)
+  //println("Waiting connection on ports " + progressPortNo + "," + dataPortNo)
+  //val nodeSocket: Socket = nodeServerSocket.accept()
+  //val progressSocket: Socket = progressServerSocket.accept()
 
-  val jsonProgress = new BufferedWriter(new OutputStreamWriter(progressSocket.getOutputStream, "UTF-8"))
+  //val jsonProgress = new BufferedWriter(new OutputStreamWriter(progressSocket.getOutputStream, "UTF-8"))
 
-  val nodeIN = new BufferedReader(new InputStreamReader(nodeSocket.getInputStream, "UTF-8"))
-  val jsonOSW = new BufferedWriter(new OutputStreamWriter(nodeSocket.getOutputStream, "UTF-8"))
+  //val nodeIN = new BufferedReader(new InputStreamReader(nodeSocket.getInputStream, "UTF-8"))
+  //val jsonOSW = new BufferedWriter(new OutputStreamWriter(nodeSocket.getOutputStream, "UTF-8"))
   //val jsonOSW = new PrintStream(new BufferedOutputStream(nodeSocket.getOutputStream))
-  val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
-  val httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnexion: Keep-Alive\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
-  webInterface.socketSend(httpResponse)
-  jsonProgress.write(httpResponse)
-  jsonProgress.flush()
-  println("Connection established.")
+  //val webInterface = nodeServer(nodeServerSocket, nodeIN, jsonOSW)
+  //val httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnexion: Keep-Alive\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
+  //webInterface.socketSend(httpResponse)
+  //jsonProgress.write(httpResponse)
+  //jsonProgress.flush()
+  //println("Connection established.")
+  var waitingList = ListBuffer[String]()
+  
+  def addBufferList(msg: String): Unit = {
+    if (msg.length>90000) {
+      val splittedString = msg.grouped(80000).toList
+      var counter = 0
+      for (frame <- splittedString) {
+        //println("Split length: " + frame.length)
+        if (counter==0) {
+          waitingList += ujson.write(ujson.Obj("event" -> "longMessage", "size" -> splittedString.length))
+          waitingList += "[FRAME]" + frame
+        }
+        else if (counter==splittedString.length-1) {
+          waitingList += frame + "[END]"
+        }
+        else {
+          waitingList += frame
+        }
+        counter+=1
+      }
+    }
+    else {
+      waitingList += msg
+    }
+  }
 
   //
   // Other stuff that should eventually be factored out

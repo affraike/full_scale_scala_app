@@ -121,7 +121,6 @@ object GraphicalMain extends SimpleSwingApplication {
     }
     val ret = App.ui.top
     println(magicStartString) // Do not remove, needed by forking code
-    Main.webInterface.socketSend("data: " + ujson.write(ujson.Obj("event" -> "firstRes")) + "\n\n")
     ret
   }
 }

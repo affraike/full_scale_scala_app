@@ -1,0 +1,99 @@
+// Electric motor controlled by a PI controller
+//
+// Author:  Anita Sant'Anna, 2012
+//
+// Run this example, view Plot
+
+// This example models an electric motor connected to a RL pole.
+// the current delivered to the motor (pole) is controlled by a 
+// PI controller following a desired pattern.
+
+// The different componenets of the model are described below:
+
+// The RL pole to which the motor is connected is described by 
+// the differential equation: 
+// 
+//   i' = (v - e - R*i)/L;
+// 
+//   where:
+//     i: current
+//     v: input voltage to the circuit
+//     e: electromotive force of the motor
+//     R: resistance
+//     L: inductance
+//
+// The electric motor is modeled by the system of equations:
+//
+//   wm' = (kT*i - TL)/Jeq;
+//   e   = wm*kE;
+// 
+//   where:
+//     e: electromotive force (EMF) of the motor
+//     wm: angular velocity of the motor
+//     kT: coefficient relating current and torque
+//     kE: coefficient relating angular velocity and EMF
+//     Jeq: equivalent inertial, combination of load inertia and motor inertia
+//     TL: load torque
+//
+// The PI controller is modeled by the differential equation:
+//
+//   v = kP*(h-i)+kI*(int_h-int_i);
+// 
+//   where:
+//     v: voltage delivered to circuit
+//     kP: proportional coefficient
+//     kI: integral coefficient
+//     i: current in the circuit
+//     h: desired current profile
+//     int_x denotes the integral of x
+
+model RLcircuit(R,L) = 
+initially 
+  i = 0 , i' = 0 , v = 0 , e = 0 
+always
+  i'=(v - e - R*i)/L 
+
+
+model ElectricMotor(Jeq,kE,kT,TL) = 
+initially 
+  i = 0 , wm = 0 , wm' = 0 , e = 0 
+always
+  wm'=(kT*i - TL)/Jeq ,
+  e=wm*kE 
+
+model PIcontroller(kP,kI) = 
+initially 
+  h = 0 , int_h = 0 , int_h' = 0 , i = 0 , int_i = 0 , int_i' = 0 , v = 0 
+always
+  int_i'=i ,
+  int_h'=h ,
+  v=kP*(h-i)+kI*(int_h-int_i) 
+  
+model Main(simulator) = 
+initially
+  motor  =  create ElectricMotor(0.0002,0.1,0.1,0) ,
+  circuit  =  create RLcircuit(4,2) ,
+  controller  =  create PIcontroller(500,1000) ,
+  mode  =  1 , t = 0 , t' = 1 
+always
+  t'=1 ,
+  // linking the different modeles
+  controller.i=circuit.i ,
+  circuit.v=controller.v ,
+  circuit.e=motor.e ,
+  motor.i=circuit.i ,
+  // simulator parameters
+  simulator.timeStep+ =0.001 ,
+  simulator.endTime+ =1 ,
+
+  // creating h as a square wave
+  // h=10 between 0.1 and 0.2 seconds, h=0 elsewhere
+  match mode with [
+    1 ->
+      controller.h=0 ,
+      if t>=0.1 then mode+ =2 noelse
+  | 2 ->
+      controller.h=10 ,
+      if t>=0.2 then mode+ =3 noelse
+  | 3 ->
+      controller.h=0 ]

@@ -1,85 +1,10 @@
-var acumenProgress = null
-var toAcumen = null
+var host = document.location.origin.toString();
 var req = new XMLHttpRequest();
-var url = new URL('http://localhost:8080/api/acumen');
-
-
+var url = new URL(host + '/api/acumen');
 var CsrfToken = document.cookie.substring(11);
-
+var gettingAcumenAnswers = null;
 var framedString = '';
 var isFrame = false;
-function connectAcumen() {
-  toAcumen = new EventSource("http://localhost:9090");
-  toAcumen.onerror = function() {
-      toAcumen.close();
-  };
-  toAcumen.onmessage =  (event) => {
-    if (event.data.substring(0, 7) === '[FRAME]') {
-      framedString = event.data.substring(7);
-      isFrame = true;
-    }
-    else {
-      if (isFrame == true) {
-        if (event.data.substring(event.data.length - 5) === '[END]') {
-          framedString += event.data.substring(0, event.data.length - 5);
-          handleMessage(framedString);
-          framedString = '';
-          isFrame = false;
-        }
-        else {
-          framedString += event.data;
-        }
-      }
-      else {
-        handleMessage(event.data);
-      }
-    }
-  };
-}
-connectAcumen();
-
-let reconnectingAcumen = false;
-setInterval(() => {
-  if (toAcumen.readyState == EventSource.CLOSED) {
-      reconnectingAcumen = true;
-      console.log("reconnecting to Acumen socket...");
-      connectAcumen();
-  } else if (reconnectingAcumen) {
-      reconnectingAcumen = false
-      console.log("reconnected!");
-  }
-}, 3000);
-
-function connectProgress() {
-  acumenProgress = new EventSource("http://localhost:9080");
-  acumenProgress.onerror = function() {
-    acumenProgress.close();
-  }
-  acumenProgress.onmessage = (event) => {
-    if (event.data.substring(0, 10) === '[PROGRESS]') {
-      var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
-      var n = event.data.match(regex);
-      var m = regex.exec(n);
-      handleMessage(m[1]);
-    }
-    else {
-      console.log('Wrong progress data!');
-    }
-  };
-}
-connectProgress();
-
-let reconnectingProgress = false;
-setInterval(() => {
-  if (acumenProgress.readyState == EventSource.CLOSED) {
-      reconnectingProgress = true;
-      console.log("reconnecting to Progress socket...");
-      connectProgress();
-  } else if (reconnectingProgress) {
-      reconnectingProgress = false
-      console.log("reconnected!");
-  }
-}, 3000);
 
 function  handleMessage(messageData) {
   try {
@@ -87,13 +12,17 @@ function  handleMessage(messageData) {
     if (!Array.isArray(obj)) {
       switch (obj.event) {
         case "firstRes":
-          url.searchParams.set('str', "[" + JSON.stringify(jsReady) + "]\r");
+          console.log("send jsReady");
           req.open('POST', url, true);
           req.setRequestHeader("Csrf-Token", CsrfToken);
-          req.send();
+          req.send("[" + JSON.stringify(jsReady) + "]\r");
           req.onload = function(e) {
-            console.log(e.data);
+            console.log(this.responseText);
           };
+          break;
+        case "longMessage":
+          console.log("the data has been splitted into " + obj.size + " chunks");
+          break;
         case "state":
           if (obj.state === "appReady") {
             editor.setOptions({
@@ -106,6 +35,9 @@ function  handleMessage(messageData) {
             }, 1000);
             loader.style.WebkitTransition = 'opacity 1s';
             loader.style.opacity = '0';
+          }
+          else if (obj.state === "appExit"){
+            document.getElementById("loader").style.display = "none";
           }
           else {
             stateChanged(obj.state);
@@ -127,7 +59,7 @@ function  handleMessage(messageData) {
           }
           break;
         case "codeArea":
-          editor.setValue(obj.text, 1);
+          editor.setValue(obj.text.replace(/@quote@/g, '"'), 1);
           editedSinceLastSave = false;
           break;
         case "console":
@@ -167,7 +99,7 @@ function  handleMessage(messageData) {
               document.getElementById("consoleButton").className += " active";
             }
             var par = document.createElement("a");
-            var parText = document.createTextNode(obj.data[1]);
+            var parText = document.createTextNode(obj.data[1].replace(/@quote@/g, '"'));
             par.appendChild(parText);
             node.appendChild(par);
             document.getElementById("consoleAreaList").appendChild(node);
@@ -252,12 +184,11 @@ function  handleMessage(messageData) {
                   let tempID = obj[i][j][k].id;
                   let isEnclosure = obj[i][j][k].isEnclosure;
                   input.onclick = function () {
-                    url.searchParams.set('str', "[" + JSON.stringify(setSemantics(tempID)) + "]\r");
                     req.open('POST', url, true);
                     req.setRequestHeader("Csrf-Token", CsrfToken);
-                    req.send();
+                    req.send("[" + JSON.stringify(setSemantics(tempID)) + "]\r");
                     req.onload = function(e) {
-                      console.log(e.data);
+                      console.log(this.responseText);
                     };
                     if (isEnclosure) { toggleContraction(true); }
                     else { toggleContraction(false); }
@@ -284,12 +215,11 @@ function  handleMessage(messageData) {
                 contrInput.onclick = function () {
                   if (this.checked == true) { contractionAction.value = 'true'; }
                   else { contractionAction.value = 'false'; }
-                  url.searchParams.set('str', "[" + JSON.stringify(contractionAction) + "]\r");
                   req.open('POST', url, true);
                   req.setRequestHeader("Csrf-Token", CsrfToken);
-                  req.send();
+                  req.send("[" + JSON.stringify(contractionAction) + "]\r");
                   req.onload = function(e) {
-                    console.log(e.data);
+                    console.log(this.responseText);
                   };
                 };
                 let contrSpan = document.createElement("span");
@@ -316,7 +246,7 @@ function  handleMessage(messageData) {
               var columnNode;
               if (i == 0) columnNode = document.createElement("TH");
               else columnNode = document.createElement("TD");
-              var textnode = document.createTextNode(obj[1][i][j]);
+              var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
               columnNode.appendChild(textnode);
               rowNode.appendChild(columnNode);
             }
@@ -432,13 +362,6 @@ function  handleMessage(messageData) {
 /** Action when user closes the browser window */
 window.onbeforeunload = function () {
   if (editedSinceLastSave) return "You have unsaved data. Please check before closing the window.";
-  url.searchParams.set('str', "[" + JSON.stringify(exitAction) + "]\r");
-  req.open('POST', url, true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
-  req.send();
-  req.onload = function(e) {
-    console.log(e.data);
-  };
 }
 
 var editor = null;
@@ -471,28 +394,25 @@ var confirmContinue = new function () {
 function getResponse(res, type) {
   switch (res) {
     case 'save':
-      url.searchParams.set('str', "[" + JSON.stringify(saveFile(false)) + "]\r");
       req.open('POST', url, true);
       req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send();
+      req.send("[" + JSON.stringify(saveFile(false)) + "]\r");
       req.onload = function(e) {
-        console.log(e.data);
+        console.log(this.responseText);
       };
       if (type === 'newAction') {
-        url.searchParams.set('str', "[" + JSON.stringify(newAction) + "]\r");
         req.open('POST', url, true);
-        req.send();
+        req.send("[" + JSON.stringify(newAction) + "]\r");
         req.onload = function(e) {
-          console.log(e.data);
+          console.log(this.responseText);
         }; 
       }
       else if (type === 'openAction') {
-        url.searchParams.set('str', "[" + JSON.stringify(openAction) + "]\r");
         req.open('POST', url, true);
         req.setRequestHeader("Csrf-Token", CsrfToken);
-        req.send();
+        req.send("[" + JSON.stringify(openAction) + "]\r");
         req.onload = function(e) {
-          console.log(e.data);
+          console.log(this.responseText);
         }; 
       }
       editedSinceLastSave = false;
@@ -500,21 +420,19 @@ function getResponse(res, type) {
       break;
     case 'discard':
       if (type === 'newAction') { 
-        url.searchParams.set('str', "[" + JSON.stringify(newAction) + "]\r");
         req.open('POST', url, true);
         req.setRequestHeader("Csrf-Token", CsrfToken);
-        req.send();
+        req.send("[" + JSON.stringify(newAction) + "]\r");
         req.onload = function(e) {
-          console.log(e.data);
+          console.log(this.responseText);
         }; 
       }
       else if (type === 'openAction') { 
-        url.searchParams.set('str', "[" + JSON.stringify(openAction) + "]\r");
         req.open('POST', url, true);
         req.setRequestHeader("Csrf-Token", CsrfToken);
-        req.send();
+        req.send("[" + JSON.stringify(openAction) + "]\r");
         req.onload = function(e) {
-          console.log(e.data);
+          console.log(this.responseText);
         }; 
       }
       editedSinceLastSave = false;
@@ -529,17 +447,81 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
+  document.getElementById("launchToggle").onclick = function() {
+    document.getElementById("loader").style.display = "flex";
+
+    if (this.checked){
+      req.open('POST', host + '/api/init', true);
+      req.setRequestHeader("Csrf-Token", CsrfToken);
+      req.send();
+      req.onload = function(e) {
+        console.log(this.responseText);
+        gettingAcumenAnswers = setInterval(() => {
+          req.open('GET', host  + '/api/buffer', true);
+          req.setRequestHeader("Csrf-Token", CsrfToken);
+          req.send();
+          req.onload = function(event) {
+            var msg = this.responseText.substring(1, this.responseText.length-1);
+
+            if (isFrame == true) {
+              if (msg.substring(msg.length - 5) === '[END]') {
+                framedString += msg.substring(0, msg.length - 5);
+                framedString = framedString.replace(/\\\\\\\"/g, "@quote@");
+                framedString = framedString.replace(/\\"/g, '"');
+                framedString = framedString.replace(/\\n/g, '\n');
+                //console.log('final message F: ', framedString)
+                handleMessage(framedString);
+                framedString = '';
+                isFrame = false;
+              }
+              else {
+                framedString += msg;
+              }
+            }else{
+              if (msg == 'Buffer is empty'){}
+              else if (msg.substring(0, 10) === '[PROGRESS]') {
+                msg = msg.replace(/\\"/g, '"');
+                msg = msg.replace(/\\n/g, '\n');
+                var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
+                var n = msg.match(regex);
+                var m = regex.exec(n);
+                //console.log('final message P: ', m[1])
+                handleMessage(m[1]);
+              }
+              else if (msg.substring(0, 7) === '[FRAME]'){
+                framedString = msg.substring(7);
+                isFrame = true;
+              }
+              else {
+                //console.log('final message #: ', msg)
+                msg = msg.replace(/\\\\\\"/g, "@quote@");
+                msg = msg.replace(/\\"/g, '"');
+                msg = msg.replace(/\\\\n/g, '\\n');
+                handleMessage(msg);
+              }
+            }
+          };
+        }, 333);
+      };
+    }
+    else{
+      clearInterval(gettingAcumenAnswers);
+      req.open('POST', url, true);
+      req.setRequestHeader("Csrf-Token", CsrfToken);
+      req.send("[" + JSON.stringify(exitAction) + "]\r");
+    }
+    
+  }
   populateFontMenu();
   populateThemeMenu();
   document.getElementById("newAction").onclick = function () {
     if (editedSinceLastSave) { confirmContinue.show('save'); }
     else {
-      url.searchParams.set('str', "[" + JSON.stringify(newAction) + "]\r");
       req.open('POST', url, true);
       req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send();
+      req.send("[" + JSON.stringify(newAction) + "]\r");
       req.onload = function(e) {
-        console.log(e.data);
+        console.log(this.responseText);
       };
       editor.focus();
     }
@@ -547,41 +529,37 @@ window.onload = function () {
   document.getElementById("openAction").onclick = function () {
     if (editedSinceLastSave) { confirmContinue.show('open'); }
     else {
-      url.searchParams.set('str', "[" + JSON.stringify(openAction) + "]\r");
       req.open('POST', url, true);
       req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send();
+      req.send("[" + JSON.stringify(openAction) + "]\r");
       req.onload = function(e) {
-        console.log(e.data);
+        console.log(this.responseText);
       };
       editor.focus();
     }
   };
   document.getElementById("saveAction").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(saveFile(true)) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(saveFile(true)) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("saveAsAction").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(saveFileAs(true)) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(saveFileAs(true)) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("recoverAction").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(recoverAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(recoverAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("downloadAction").onclick = function() {
@@ -601,7 +579,8 @@ window.onload = function () {
       elem.click();        
       document.body.removeChild(elem);
     }
-};
+  
+  };
   document.getElementById("exportAction").setAttribute("onClick", "javascript: exportTable();");
   document.getElementById("undoAction").onclick = function () {
     editor.undo();
@@ -652,117 +631,137 @@ window.onload = function () {
   document.getElementById("simulatorFields").onclick = function () {
     if (this.checked == true) { simulatorFieldsAction.value = 'true'; }
     else { simulatorFieldsAction.value = 'false'; }
-    url.searchParams.set('str', "[" + JSON.stringify(simulatorFieldsAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(simulatorFieldsAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("childCount").onclick = function () {
     if (this.checked == true) { childCountAction.value = 'true'; }
     else { childCountAction.value = 'false'; }
-    url.searchParams.set('str', "[" + JSON.stringify(childCountAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(childCountAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("rngSeeds").onclick = function () {
     if (this.checked == true) { rngSeedsAction.value = 'true'; }
     else { rngSeedsAction.value = 'false'; }
-    url.searchParams.set('str', "[" + JSON.stringify(rngSeedsAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(rngSeedsAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("normalization").onclick = function () {
     if (this.checked == true) { normalizationAction.value = 'true'; }
     else { normalizationAction.value = 'false'; }
-    url.searchParams.set('str', "[" + JSON.stringify(normalizationAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(normalizationAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("startServer").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(startServerAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(startServerAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("stopServer").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(stopServerAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(stopServerAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("resetDevice").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("serverLink").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("playButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(playAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(playAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     }
   };
   document.getElementById("pauseButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(pauseAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(pauseAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("stepButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(stepAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(stepAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
   };
   document.getElementById("stopButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(stopAction) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(stopAction) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
+    };
+  };
+  document.getElementById("playMenuButton").onclick = function () {
+    req.open('POST', url, true);
+    req.setRequestHeader("Csrf-Token", CsrfToken);
+    req.send("[" + JSON.stringify(playAction) + "]\r");
+    req.onload = function(e) {
+      console.log(this.responseText);
+    }
+  };
+  document.getElementById("pauseMenuButton").onclick = function () {
+    req.open('POST', url, true);
+    req.setRequestHeader("Csrf-Token", CsrfToken);
+    req.send("[" + JSON.stringify(pauseAction) + "]\r");
+    req.onload = function(e) {
+      console.log(this.responseText);
+    };
+  };
+  document.getElementById("stepMenuButton").onclick = function () {
+    req.open('POST', url, true);
+    req.setRequestHeader("Csrf-Token", CsrfToken);
+    req.send("[" + JSON.stringify(stepAction) + "]\r");
+    req.onload = function(e) {
+      console.log(this.responseText);
+    };
+  };
+  document.getElementById("stopMenuButton").onclick = function () {
+    req.open('POST', url, true);
+    req.setRequestHeader("Csrf-Token", CsrfToken);
+    req.send("[" + JSON.stringify(stopAction) + "]\r");
+    req.onload = function(e) {
+      console.log(this.responseText);
     };
   };
   document.getElementById("consoleButton").onclick = function () {
@@ -787,32 +786,29 @@ window.onload = function () {
     });
   };
   document.getElementById("plotButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(plotButton) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(plotButton) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
     changeRTab('plotTab', event);
   };
   document.getElementById("traceButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(traceButton) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(traceButton) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
     changeRTab('traceTab', event);
   };
   document.getElementById("threeDButton").onclick = function () {
-    url.searchParams.set('str', "[" + JSON.stringify(threeDButton) + "]\r");
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
-    req.send();
+    req.send("[" + JSON.stringify(threeDButton) + "]\r");
     req.onload = function(e) {
-      console.log(e.data);
+      console.log(this.responseText);
     };
     changeRTab('threeDtab', event);
   };
@@ -879,12 +875,11 @@ function populateThemeMenu() {
 function updateInput() {
   document.getElementById("undoAction").disabled = !editor.session.getUndoManager().hasUndo();
   document.getElementById("redoAction").disabled = !editor.session.getUndoManager().hasRedo();
-  url.searchParams.set('str', "[" + JSON.stringify(getCode()) + "]\r");
   req.open('POST', url, true);
   req.setRequestHeader("Csrf-Token", CsrfToken);
-  req.send();
+  req.send("[" + JSON.stringify(getCode()) + "]\r");
   req.onload = function(e) {
-    console.log(e.data);
+    console.log(this.responseText);
   };
 }
 
@@ -1041,10 +1036,9 @@ function createChildNodes(file, parentNode) {
         let fileNodeC = document.createElement("li");
         fileNodeC.id = '[ID]' + file.children[j].id;
         fileNodeC.addEventListener("click", function () { 
-          url.searchParams.set('str', "[" + JSON.stringify(selectFile(fileNodeC.id.substring(4))) + "]\r");
           req.open('POST', url, true);
           req.setRequestHeader("Csrf-Token", CsrfToken);
-          req.send() 
+          req.send("[" + JSON.stringify(selectFile(fileNodeC.id.substring(4))) + "]\r") 
         });
         let textC = document.createTextNode(file.children[j].name);
         fileNodeC.style.cursor = "pointer";
