@@ -10,6 +10,42 @@ postgres database.
 
 The frontend uses the Laminar framework for UI rendering.
 
+## Dev environment
+To compile locally the full application, you must first clone the repository:
+```
+git clone https://github.com/affraike/full_scale_scala_app.git
+cd full_scale_scala_app
+```
+
+First, make sure that the file 'backend/conf/application.conf' is in this configuration :
+```
+slick.dbs.default {
+  db = {
+    #url = ${?JDBC_DATABASE_URL}
+    driver = "org.postgresql.Driver"
+    url="jdbc:postgresql://localhost:5432/testDB"
+    user="postgres"
+    password="super387"
+  }
+  profile = "slick.jdbc.PostgresProfile$"
+  numThreads = 1
+  driver="slick.driver.PostgresDriver$"
+}
+```
+
+Then, you can use, in one command line (terminal)
+```bash
+# Frontend hot reload only on localhost:8080
+sbt dev
+```
+and in another,
+```bash
+# Backend hot reload only on localhost:9000
+sbt backend/run
+```
+
+Please note that Acumen desktop api can no longer be launched inside the app.
+
 ## Deploy
 
 The app is hosted on Heroku. In order to deploy,
@@ -52,41 +88,3 @@ To see the files on the deployed server:
 ```
 heroku run bash --app APPNAME
 ```
-
-## Dev environment
-To compile locally the full application, you must first clone the repository:
-
-First, make sure that the file 'backend/conf/application.conf' is in this configuration :
-```
-slick.dbs.default {
-  db = {
-    #url = ${?JDBC_DATABASE_URL}
-    driver = "org.postgresql.Driver"
-    url="jdbc:postgresql://localhost:5432/testDB"
-    user="postgres"
-    password="super387"
-  }
-  profile = "slick.jdbc.PostgresProfile$"
-  numThreads = 1
-  driver="slick.driver.PostgresDriver$"
-}
-```
-
-Then, in a terminal,
-```
-git clone https://github.com/affraike/full_scale_scala_app.git
-cd full_scale_scala_app
-```
-
-Then, you can use, in one command line (terminal)
-```bash
-# Frontend hot reload only on localhost:8080
-sbt dev
-```
-and in another,
-```bash
-# Backend hot reload only on localhost:9000
-sbt backend/run
-```
-
-Acumen desktop api can no longer be launched inside the app.
