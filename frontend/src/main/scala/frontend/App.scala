@@ -92,13 +92,13 @@ object App {
           li(cls := "navMenuItem",
             a(cls := "dropbtn","File"),
             div(cls := "dropdown-content",
-              button(`type` := "button", id := "newAction","New"),
-              button(`type` := "button", id := "openAction","Open"),
-              button(`type` := "button", id := "saveAction","Save"),
-              button(`type` := "button", id := "saveAsAction","Save as"),
+              button(`type` := "button", id := "newAction","New", disabled := true),
+              button(`type` := "button", id := "openAction","Open", disabled := true),
+              button(`type` := "button", id := "saveAction","Save", disabled := true),
+              button(`type` := "button", id := "saveAsAction","Save as", disabled := true),
               button(`type` := "button", id := "downloadAction","Download"),
-              button(`type` := "button", id := "exportAction","Export Table"),
-              button(`type` := "button", id := "recoverAction","Recover")
+              button(`type` := "button", id := "exportAction","Export Table", disabled := true),
+              button(`type` := "button", id := "recoverAction","Recover", disabled := true)
             )
           ),
           li(cls := "navMenuItem",
@@ -162,8 +162,8 @@ object App {
             )
           ),
           li(cls := "navMenuItem",
-            a(cls := "dropbtn","Plotting"),
-            div(cls := "dropdown-content",
+            a(cls := "dropbtn","Plotting", cursor := "not-allowed"),
+            div(cls := "dropdown-content", display := "none",
               div(cls := "vertical-nav",
                 div(
                   display:="flex",
@@ -253,8 +253,8 @@ object App {
             )
           ),
           li(cls := "navMenuItem",
-            a(cls := "dropbtn","Devices"),
-            div(cls := "dropdown-content",
+            a(cls := "dropbtn","Devices", cursor := "not-allowed"),
+            div(cls := "dropdown-content", display := "none",
               button(`type` := "button", id := "startServer","Start Server"
               ),
               button(`type` := "button", id := "stopServer", disabled := true,"Stop Server"
@@ -327,13 +327,13 @@ object App {
             button(id := "dragAndDropButton", cls := "ctablinks","Drag&Drop"
             )
           ),
-          div(id := "consoleTab", cls := "ctabcontent", height:="345px", overflow:="scroll",
+          div(id := "consoleTab", cls := "ctabcontent", height:="340px", overflow:="scroll",
             ul(id := "consoleAreaList")
           ),
-          div(id := "browserTab", cls := "ctabcontent", display:="none", height:="345px", overflow:="scroll",
+          div(id := "browserTab", cls := "ctabcontent", display:="none", height:="340px", overflow:="scroll",
             ul(id := "browserAreaList")
           ),
-          div(id := "dropTab", cls := "ctabcontent", display:="none", height:="345px", width:= "calc(100% - 105px)"
+          div(id := "dropTab", cls := "ctabcontent", display:="none", height:="341px"
             , "Drop your files here !"
           )
         )
@@ -347,39 +347,39 @@ object App {
           button(id := "threeDButton", cls := "vtablinks","_3D"
           )
         ),
-        div(id := "plotTab", cls := "vtabcontent", display:= "none", height:= "870px", overflowY:= "scroll"),
-        div(id := "traceTab", cls := "vtabcontent", display:= "none",
-          div(height:= "870px",
-            overflowY:= "scroll",
+        div(id := "plotTab", cls := "vtabcontent", height:= "862px", width := "calc(100% - 6px)", overflowY:= "scroll"),
+        div(id := "traceTab", cls := "vtabcontent", display:= "none", height:= "862px", width := "calc(100% - 6px)",
+          div(
+            overflowY:= "scroll", overflowX:= "scroll",
             table(id := "traceTable")
           )
         ),
-        div(id := "threeDtab", cls := "vtabcontent", display:= "none", height:= "870px", overflowY:= "scroll",
+        div(id := "threeDtab", cls := "vtabcontent", display:= "none", height:= "862px", width := "calc(100% - 6px)",
           div(id := "canvasPanel",
-            div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
-              span("3D panel not yet implemented"),
-            ),
-            canvas(id:= "plottingCanvas")
+            //div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
+            //  span("3D panel not yet implemented"),
+            //)
+            canvas(id:= "acumenRenderCanvas", height:= "690px", width:= "100%")
           ),
           div(id := "threedControls",
             div(id := "threedViews",
-              div(id := "threedViewControls",
-                button(
+              div(id := "threedViewControls", width:="calc(100% / 3)",
+                button(id:= "defaultViewIcon",
                   img(
                     src:="./icons/defaultView.png"
                   )
                 ),
-                button(
+                button(id:= "frontViewIcon",
                   img(
                     src:="./icons/frontView.png"
                   )
                 ),
-                button(
+                button(id:= "rightViewIcon",
                   img(
                     src:="./icons/rightView.png"
                   )
                 ),
-                button(
+                button(id:= "topViewIcon",
                   img(
                     src:="./icons/topView.png"
                   )
@@ -390,34 +390,34 @@ object App {
                   label("Camera"),
                   label(
                     span("X:"),
-                    input(`type` := "text", name := "camX")
+                    input(`type` := "text", id := "camX")
                   ),
                   label(
                     span("Y:"),
-                    input(`type` := "text", name := "camY")
+                    input(`type` := "text", id := "camY")
                   ),
                   label(
                     span("Z:"),
-                    input(`type` := "text", name := "camZ")
+                    input(`type` := "text", id := "camZ")
                   )
                 ),
                 div(id := "scenePositions",
                   label("Look At"),
                   label(
                     span("X:"),
-                    input(`type` := "text", name := "laX")
+                    input(`type` := "text", id := "laX")
                   ),
                   label(
                     span("Y:"),
-                    input(`type` := "text", name := "laY")
+                    input(`type` := "text", id := "laY")
                   ),
                   label(
                     span("Z:"),
-                    input(`type` := "text", name := "laZ")
+                    input(`type` := "text", id := "laZ")
                   )
                 )
               ),
-              div(id := "sceneOptions",
+              div(id := "sceneOptions", width:="calc(100% / 3)",
                 div(display:="flex", flexDirection:="column",
                   label(
                     input(`type` := "checkbox", id := "showAxis"),
@@ -436,22 +436,22 @@ object App {
             ),
             div(id := "threedTimeControls",
               div(id := "threedControlButtons",
-                button(
+                button(id:= "BabPlay",
                   img(
                     src:="./icons/play.png"
                   )
                 ),
-                button(
+                button(id:= "BabStop",
                   img(
                     src:="./icons/stop.png"
                   )
                 ),
-                button(
+                button(id:= "slowerIcon",
                   img(
                     src:="./icons/slower.png"
                   )
                 ),
-                button(
+                button(id:= "fasterIcon",
                   img(
                     src:="./icons/faster.png"
                   )
@@ -496,13 +496,7 @@ object App {
       src:="./plotly.min.js"
     ),
     script(
-      src:="./ReconnectingEventSource.min.js"
-    ),
-    script(
       src:="./acumen.js"
-    ),
-    script(
-      src:="https://cdn.babylonjs.com/babylon.max.js"
     )
   )
 }

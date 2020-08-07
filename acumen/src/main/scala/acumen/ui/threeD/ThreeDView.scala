@@ -1256,20 +1256,20 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
           anaglyphObject.translate(app.eyeOffSet, 0, 0)
         if (TextureManager.getInstance().containsTexture("ConeCyan"))
           anaglyphObject.setTexture("ConeCyan")
-        if (name != "Text" && name != "Triangle")
-          CustomObject3D.partialBuild(anaglyphObject, false)
+        if (name != "Text" && name != "Triangle"){}
+          //CustomObject3D.partialBuild(anaglyphObject, false)
         else {
           anaglyphObject.setRotationPivot(new SimpleVector(0, 0, 0))
           anaglyphObject.setCenter(new SimpleVector(0, 0, 0))
-          CustomObject3D.partialBuild(anaglyphObject, true)
+          //CustomObject3D.partialBuild(anaglyphObject, true)
         }
       }
-      if (name != "Text" && name != "Triangle")
-        CustomObject3D.partialBuild(transObject, false)
+      if (name != "Text" && name != "Triangle"){}
+        //CustomObject3D.partialBuild(transObject, false)
       else {
         transObject.setRotationPivot(new SimpleVector(0, 0, 0))
         transObject.setCenter(new SimpleVector(0, 0, 0))
-        CustomObject3D.partialBuild(transObject, true)
+        //CustomObject3D.partialBuild(transObject, true)
       }
     }
   }
@@ -1370,21 +1370,21 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
           anaglyphObject.setTexture("ConeCyan")
         anaglyphObject.translate(app.eyeOffSet, 0, 0)
         app.objectsCopy += c -> (anaglyphObject, coordinates)
-        if (name != "Text" && name != "Triangle")
-          CustomObject3D.partialBuild(anaglyphObject, false)
+        if (name != "Text" && name != "Triangle"){}
+          //CustomObject3D.partialBuild(anaglyphObject, false)
         else {
           anaglyphObject.setRotationPivot(new SimpleVector(0,0,0))
           anaglyphObject.setCenter(new SimpleVector(0,0,0))
-          CustomObject3D.partialBuild(anaglyphObject, true)
+          //CustomObject3D.partialBuild(anaglyphObject, true)
         }
       }
       app.objects += c -> (newObject, coordinates)
-      if (name != "Text" && name != "Triangle")
-        CustomObject3D.partialBuild(newObject, false)
+      if (name != "Text" && name != "Triangle"){}
+        //CustomObject3D.partialBuild(newObject, false)
       else {
         newObject.setRotationPivot(new SimpleVector(0,0,0))
         newObject.setCenter(new SimpleVector(0,0,0))
-        CustomObject3D.partialBuild(newObject, true)
+        //CustomObject3D.partialBuild(newObject, true)
       }
     }
   }
@@ -1450,6 +1450,7 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
             }
           }
           if (currentFrame <= totalFrames && !staticFrame) {
+            app.waitingPaint = false
             if (!app.waitingPaint)
               renderCurrentFrame()
             currentFrame = setFrameNumber("go", currentFrame)
@@ -1599,8 +1600,8 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
     val resultObject =
       if (objFile.head.getName.endsWith(".obj")) {
         // make sure there's only one material file
-        if (mtlFile.isEmpty) throw _3DLoadFileError("Can not find material file for " + path)
-        else if (mtlFile.length > 1) throw _3DLoadFileError("Duplicate material files for " + path)
+        //if (mtlFile.isEmpty) throw _3DLoadFileError("Can not find material file for " + path)
+        /*else*/ if (mtlFile.length > 1) throw _3DLoadFileError("Duplicate material files for " + path)
         else {
           for (texture <- textureFiles) {
             if (!TextureManager.getInstance().containsTexture(texture.getName))

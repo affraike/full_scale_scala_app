@@ -14,14 +14,16 @@ object Files {
   private def _now = _saved + File.separator + timeTag + ".acm"
 
   val currentDir = {
-    val md = new File("./public/examples")
-    if (md.exists()) md
+    val mdCur = new File("./public/examples")
+    val mdCurLoc = new File("./frontend/public/examples")
+    if (mdCur.exists()) mdCur
+    else if (mdCurLoc.exists()) mdCurLoc
     else new File(".")
   }
 
   val LibDir = {
-    val md = new File("stdlib")
-    if (md.exists()) md
+    val mdLib = new File("stdlib")
+    if (mdLib.exists()) mdLib
     else new File(".")
   }
  
@@ -29,8 +31,10 @@ object Files {
                the correct one automatically ? In my case 
                /Users/yingfuzeng/Desktop/work/newAcumen/acumen/_3D  */
   val _3DDir = {
-	val md = new File("_3D")
+	val md = new File("./public/_3D")
+  val mdLoc = new File("./frontend/public/_3D")
     if (md.exists()) md
+    else if (mdLoc.exists()) mdLoc
     else{ md.mkdirs; md } 
   }
   private val home = new File(_home)

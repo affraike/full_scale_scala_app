@@ -88,7 +88,7 @@ class App extends SimpleSwingApplication {
         case "action" =>
           jsonString(0)("action").str match {
             case "Play" =>
-              runSimulation()
+              threeDtab.play()              
             case "Pause" =>
               controller ! Pause
             case "Step" =>
@@ -189,7 +189,6 @@ class App extends SimpleSwingApplication {
     }
     catch {
       case x: Exception =>  
-        println(x.getCause.toString)
         println("Json error: " + input)
     }
   }

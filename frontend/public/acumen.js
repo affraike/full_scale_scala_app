@@ -5,6 +5,7 @@ var CsrfToken = document.cookie.substring(11);
 var gettingAcumenAnswers = null;
 var framedString = '';
 var isFrame = false;
+var engine = null;
 
 function  handleMessage(messageData) {
   try {
@@ -131,11 +132,14 @@ function  handleMessage(messageData) {
     else {
       if (obj[0].hasOwnProperty('action')) {
         if (obj[0].action === 'filetree') {
-          showBrowser(obj[1]);
+          console.log(sortByKey(obj[1]));
+          showBrowser(sortByKey(obj[1]));
         }
         else if (obj[0].action === 'threedAllFrames') {
           // TODO This is the json object containing all the frames.
           let complete3Dframes = obj;
+          load3Ddataset(obj);
+          console.log(obj)
           /** ---------- How to enable the 3D Tab ----------
            * In order for the 3DTab to work you need to follow these steps:
            * - Enable the canvas in acumen.html file
@@ -447,11 +451,6 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
-  // Get the canvas DOM element
-  var canvas = document.getElementById('plottingCanvas');
-  // Load the 3D engine
-  var engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer: true, stencil: true});
-
   document.getElementById("launchToggle").onclick = function() {
     document.getElementById("loader").style.display = "flex";
 
@@ -835,7 +834,597 @@ window.onload = function () {
   editor.setOption('cursorStyle', 'smooth');
   editor.session.setOptions({ tabSize: 2, useSoftTabs: true });
   editor.on("input", updateInput);
+
+  //BabylonJS related elements
+  startAnimationButton = document.getElementById('BabPlay');
+  startAnimationButton.onclick = playAnimation;
+  // startAnimationButton.disabled = true;
+  stopAnimationButton = document.getElementById('BabStop');
+  stopAnimationButton.onclick = function () {
+    pauseAnimation();
+    frame = 0;
+  };
+  // stopAnimationButton.disabled = true;
+  timelineSlider = document.getElementById('threedProgress');
+  timelineSlider.oninput = timelineAnimation;
+  timelineSlider.disabled = true;
+  time = document.getElementById('threedTimer');
+  //Default View
+  let xyzBtn = document.getElementById('defaultViewIcon');
+  xyzBtn.onclick = function () {
+    camera.setPosition(defaultCameraPosition);
+    camera.setTarget(new BABYLON.Vector3.Zero);
+  };
+  //Top view
+  let xyBtn = document.getElementById('topViewIcon');
+  xyBtn.onclick = function () {
+    camera.beta = 0;
+    camera.setTarget(new BABYLON.Vector3.Zero);
+
+  };
+  //Right view
+  let yzBtn = document.getElementById('rightViewIcon');
+  yzBtn.onclick = function () {
+    camera.alpha = Math.PI / 2;
+    camera.beta = Math.PI / 2;
+    camera.setTarget(new BABYLON.Vector3.Zero);
+  };
+  //Front view
+  let xzBtn = document.getElementById('frontViewIcon');
+  xzBtn.onclick = function () {
+    camera.alpha = 0;
+    camera.beta = Math.PI / 2;
+    camera.setTarget(new BABYLON.Vector3.Zero);
+  };
+  //Faster Animation
+  let faster = document.getElementById('fasterIcon');
+  faster.onclick = function () {
+    frameRate++;
+  };
+  //Slower Animation
+  let slower = document.getElementById('slowerIcon');
+  slower.onclick = function () {
+    frameRate--;
+  };
+
+  InitializeBabylonJSScene();
 }
+
+/** =================================  START BABYLONJS CANVAS  ======================================== */
+
+//BabylonJS related global variables
+var canvas, engine, scene, camera, light, timelineSlider, time, timelineDelta, startAnimationButton, stopAnimationButton;
+var defaultCameraPosition = new BABYLON.Vector3.Zero;
+var frameRate = 1;
+var framelength = 0;
+var alldata = null;
+var obj3d = [];
+var frame = 0;
+var enableAnimation = false;
+/** BabylonJS Scene
+ * 
+*/
+function InitializeBabylonJSScene() {
+  canvas = document.getElementById('acumenRenderCanvas');
+  engine = new window.BABYLON.Engine(canvas, true);
+  scene = new BABYLON.Scene(engine);
+  // Enable Collisions
+  // scene.collisionsEnabled = true;
+  createCamera_Light();
+  //Update loop for rendering on each frame...
+  //each frme of Babylon against each frame of Acumen exported Json
+  scene.registerBeforeRender(function () {
+    if (enableAnimation && alldata && (frame < (framelength - 1))) {
+      frame++; //we start from 1st index
+      if (frame >= (framelength - 1)) {
+        //last frame
+        frame = 0;
+        pauseAnimation();
+      } else {
+        renderFrames();
+        timelineDelta = frame;
+        timelineSlider.value = frame;
+        time.innerHTML = "Time: " + roundUp(frame / 60, 2) + " sec";
+      }
+    }
+  });
+
+  scene.clearColor = new BABYLON.Color4(192, 192, 192, 0);
+  // register a render loop that repeatedly
+  // renders the scene onto the canvas element
+  engine.runRenderLoop(function () {
+    scene.render();
+  });
+  //instantiate a handler for canvas/window resize events
+  window.addEventListener('resize', function () {
+    engineReferesh();
+  });
+}
+
+//Data from Acumen Swing Buffer
+function load3Ddataset(obj) {
+  engineReferesh();
+  resetScene();
+  alldata = obj;//accumen data
+  frame = 0;
+  framelength = alldata.length - 1;
+  startAnimationButton.disabled = false;
+  timeLineSetting();
+  enableAnimation = true;//starting simulation...
+}
+
+function playAnimation() {
+  // startAnimationButton.style.backgroundImage = pauseButtonImage;
+  // startAnimationButton.onclick = pauseAnimation;
+  enableAnimation = true;
+  // stopAnimationButton.disabled = false;
+  if (frame >= (framelength - 1)) {
+    //restart from first frame
+    frame = 0;
+  }
+}
+
+function pauseAnimation() {
+  enableAnimation = false;
+}
+
+/**
+ * BabylonJS Scene: Camera and lighting
+ */
+function createCamera_Light() {
+  camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(0, 0, 0), scene);
+  // Default positions & rotation of the camera
+  camera.setPosition(new BABYLON.Vector3.Zero);
+  camera.setTarget(new BABYLON.Vector3.Zero);
+  camera.lowerRadiusLimit = 1;
+  camera.upperRadiusLimit = 100;
+  camera.radius = 5;
+  // This attaches the camera to the canvas
+  camera.attachControl(canvas, true);
+  //Light direction is directly down
+  light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -10, 0), scene);
+  light.diffuse = new BABYLON.Color3.White();
+  light.specular = new BABYLON.Color3(0, 0, 0);
+  light.groundColor = new BABYLON.Color3.White();
+  light.intensity = 1;
+}
+/** Refresh BabylonJs Engine */
+function engineReferesh() {
+  engine.resize();
+  if (scene) {
+    scene.render();
+  }
+}
+
+/**
+   * Dispose older meshes. Empty previous arrays
+   */
+function resetScene() {
+  if (alldata != null) {
+    obj3d.forEach(obj => {
+      obj.dispose();
+    });
+    obj3d = [];
+    alldata = null;
+
+  }
+}
+
+function timeLineSetting() {
+  timelineSlider.max = "" + framelength;
+  timelineDelta = 0;
+  timelineSlider.value = 0;
+  timelineSlider.disabled = false;
+}
+
+function timelineAnimation() {
+  var tl_index = parseInt(timelineSlider.value);
+  timelineDelta = tl_index - 1;
+  frame = Math.min(Math.max(tl_index, 0), (alldata.length - 1));  //minimum zero..maximum length - 1
+  time.innerHTML = "Time: " + roundUp(tl_index / 60, 2) + " sec";
+  renderFrames();
+  if (frame >= (framelength - 1)) {
+    pauseAnimation();
+  }
+}
+
+/**
+* Round up a float value
+* @param {*} value : float value to round up
+* @param {*} decimalPlaces : decimal places 
+*/
+function roundUp(value, decimalPlaces) {
+  return parseFloat((value * 100) / 100).toFixed(decimalPlaces);
+}
+
+/**
+ * Render each frame
+ */
+function renderFrames() {
+  for (var indobj = 0; indobj < alldata[frame].length - 1; indobj++) {
+    if (alldata[frame][indobj][0].type == "newObj") {
+      //create new object
+      createNewObject(alldata[frame][indobj][0].data);
+    } else {
+      //update objects w.r.t frames
+      renderObject(alldata[frame][indobj][0].data);
+    }
+  }
+
+  //camera is on last index of each frame. 
+  //Get position from each frame but target from first frame only so that user can rotate camera as they wisj
+  if (frame == 1 && alldata[frame][alldata[frame].length - 1].type == "camera") {
+    defaultCameraPosition = new BABYLON.Vector3(-alldata[frame][indobj].position[1],
+      alldata[frame][indobj].position[2], alldata[frame][indobj].position[0]);
+    camera.setPosition(defaultCameraPosition);
+    camera.setTarget(new BABYLON.Vector3(-alldata[frame][indobj].lookAtPosition[1],
+      alldata[frame][indobj].lookAtPosition[2], alldata[frame][indobj].lookAtPosition[0]));
+    camera.radius = 7;//a little zoomed in camera...
+
+  }
+
+}
+
+function createNewObject(data) {
+  switch (data.name) {
+    case "Sphere":
+      obj3d.push(BABYLON.MeshBuilder.CreateSphere(data.name, { diameterX: 1, diameterY: 1, diameterZ: 1 }, scene));
+      break;
+    case "Box":
+      obj3d.push(BABYLON.MeshBuilder.CreateBox(data.name, { height: 1, width: 1, depth: 1 }, scene));
+      break;
+    case "Cylinder":
+      obj3d.push(BABYLON.MeshBuilder.CreateCylinder(data.name, {diameterTop: 1, tessellation: 4}, scene));
+      break;
+    case "Cone":
+      obj3d.push(BABYLON.MeshBuilder.CreateCylinder(data.name, {diameterTop: 0, tessellation: 4}, scene));
+      break;
+    case "Plane":
+      obj3d.push(BABYLON.MeshBuilder.CreatePlane("plane", {width: 5, size:5, tileSize:1}, scene));
+      break;
+    case "Text":
+      obj3d.push(make_textline(data.text, data.position[0], data.position[1], data.position[2], "center", data.color, 6, 0.2, true, 0.1));
+      break;
+    case "OBJ":
+      switch (data.path) {
+        case "car" :
+          obj3d.push(loadCustomObj("car"));
+          break;
+        case "motor" :
+          obj3d.push(loadCustomObj("motor"));
+          break;
+        case "house" :
+          obj3d.push(loadCustomObj("house"));
+          break;
+        case "sensor" :
+          obj3d.push(loadCustomObj("sensor"));
+          break;
+        case "truck" :
+          obj3d.push(loadCustomObj("truck"));
+          break;
+      }
+      break;
+    default:
+      return;
+  }
+  obj3d[obj3d.length - 1].id = data.id;
+  var mat = new BABYLON.StandardMaterial("wpMat", scene);
+  mat.emissiveColor = new BABYLON.Color3(data.color[0], data.color[1], data.color[2]);
+  mat.alpha = data.transparency > 0 ? 0.7 : 1;
+  obj3d[obj3d.length - 1].material = mat;
+}
+
+function loadCustomObj(path) {
+  var obj_path = "./_3D/" + path + "/";
+  var obj_name = path + ".obj";
+
+  return BABYLON.SceneLoader.Append(obj_path, obj_name, scene, function (scene) {});
+}
+
+function renderObject(data) {
+  //ALL properties such as position,scale,color etc from JSOn file
+  obj3d.forEach(obj => {
+    if (data.id === obj.id) {
+      //this animation belong to this object...
+      //position [x,y,z] replaced as [-y,z,x]. 
+      var pos = new BABYLON.Vector3(parseFloat(data.position[0].toFixed(2)),
+        parseFloat(data.position[2].toFixed(2)),
+        parseFloat(-data.position[1].toFixed(2)));
+      var rotation = new BABYLON.Vector3(parseFloat(data.angle[0].toFixed(2)),
+        parseFloat(-data.angle[2].toFixed(2)),
+        parseFloat(data.angle[1].toFixed(2)));
+
+      //we dont always have x,y,z indexes
+      var sizex = data.size[0].toFixed(2);
+      var index = 1 % data.size.length;
+      var sizez = data.size[index].toFixed(2);
+      index = (index + 1) % data.size.length;
+      var sizey = data.size[index].toFixed(2);
+
+      var scale = new BABYLON.Vector3(-sizex,
+        sizey,
+        sizez);
+
+      obj.position = pos;
+      obj.scaling = scale;
+      obj.rotation = rotation;
+
+      obj.material.emissiveColor = new BABYLON.Color3(data.color[0], data.color[1], data.color[2]);
+      obj.material.alpha = data.transparency > 0 ? 0.7 : 1;
+    }
+  });
+}
+
+// 3D text rendering
+// fontdata, used to create letters
+font=[]
+font[0]=[[[0,21]],[[15,21]]]
+font[1]=[[[0,21]],[[15,21]]]
+font[2]=[[[5,21],[ 5,7]],[[5,2],[ 4,1],[ 5,0],[ 6,1],[ 5,2]]]
+font[3]=[[[4,21],[ 4,14]],[[12,21],[ 12,14]]]
+font[4]=[[[11.5,25],[ 4.5,-7]],[[17.5,25],[ 10.5,-7]],[[4.5,12],[ 18.5,12]],[[3.5,6],[ 17.5,6]]]
+font[5]=[[[8,25],[ 8,-4]],[[12,25],[ 12,-4]],[[17,18],[ 15,20],[ 12,21],[ 8,21],[ 5,20],[ 3,18],[ 3,16],[ 4,14],[ 5,13],[ 7,12],[ 13,10],[ 15,9],[ 16,8],[ 17,6],[ 17,3],[ 15,1],[ 12,0],[ 8,0],[ 5,1],[ 3,3]]]
+font[6]=[[[21,21],[ 3,0]],[[8,21],[ 10,19],[ 10,17],[ 9,15],[ 7,14],[ 5,14],[ 3,16],[ 3,18],[ 4,20],[ 6,21],[ 8,21],[ 10,20],[ 13,19],[ 16,19],[ 19,20],[ 21,21]],[[17,7],[ 15,6],[ 14,4],[ 14,2],[ 16,0],[ 18,0],[ 20,1],[ 21,3],[ 21,5],[ 19,7],[ 17,7]]]
+font[7]=[[[23,12],[ 23,13],[ 22,14],[ 21,14],[ 20,13],[ 19,11],[ 17,6],[ 15,3],[ 13,1],[ 11,0],[ 7,0],[ 5,1],[ 4,2],[ 3,4],[ 3,6],[ 4,8],[ 5,9],[ 12,13],[ 13,14],[ 14,16],[ 14,18],[ 13,20],[ 11,21],[ 9,20],[ 8,18],[ 8,16],[ 9,13],[ 11,10],[ 16,3],[ 18,1],[ 20,0],[ 22,0],[ 23,1],[ 23,2]]]
+font[8]=[[[5,19],[ 4,20],[ 5,21],[ 6,20],[ 6,18],[ 5,16],[ 4,15]]]
+font[9]=[[[11,25],[ 9,23],[ 7,20],[ 5,16],[ 4,11],[ 4,7],[ 5,2],[ 7,-2],[ 9,-5],[ 11,-7]]]
+font[10]=[[[3,25],[ 5,23],[ 7,20],[ 9,16],[ 10,11],[ 10,7],[ 9,2],[ 7,-2],[ 5,-5],[ 3,-7]]]
+font[11]=[[[8,21],[ 8,9]],[[3,18],[ 13,12]],[[13,18],[ 3,12]]]
+font[12]=[[[13,18],[ 13,0]],[[4,9],[ 22,9]]]
+font[13]=[[[6,1],[ 5,0],[ 4,1],[ 5,2],[ 6,1],[ 6,-1],[ 5,-3],[ 4,-4]]]
+font[14]=[[[4,9],[ 22,9]]]
+font[15]=[[[5,2],[ 4,1],[ 5,0],[ 6,1],[ 5,2]]]
+font[16]=[[[20,25],[ 2,-7]]]
+font[17]=[[[9,21],[ 6,20],[ 4,17],[ 3,12],[ 3,9],[ 4,4],[ 6,1],[ 9,0],[ 11,0],[ 14,1],[ 16,4],[ 17,9],[ 17,12],[ 16,17],[ 14,20],[ 11,21],[ 9,21]]]
+font[18]=[[[6,17],[ 8,18],[ 11,21],[ 11,0]]]
+font[19]=[[[4,16],[ 4,17],[ 5,19],[ 6,20],[ 8,21],[ 12,21],[ 14,20],[ 15,19],[ 16,17],[ 16,15],[ 15,13],[ 13,10],[ 3,0],[ 17,0]]]
+font[20]=[[[5,21],[ 16,21],[ 10,13],[ 13,13],[ 15,12],[ 16,11],[ 17,8],[ 17,6],[ 16,3],[ 14,1],[ 11,0],[ 8,0],[ 5,1],[ 4,2],[ 3,4]]]
+font[21]=[[[13,21],[ 3,7],[ 18,7]],[[13,21],[ 13,0]]]
+font[22]=[[[15,21],[ 5,21],[ 4,12],[ 5,13],[ 8,14],[ 11,14],[ 14,13],[ 16,11],[ 17,8],[ 17,6],[ 16,3],[ 14,1],[ 11,0],[ 8,0],[ 5,1],[ 4,2],[ 3,4]]]
+font[23]=[[[16,18],[ 15,20],[ 12,21],[ 10,21],[ 7,20],[ 5,17],[ 4,12],[ 4,7],[ 5,3],[ 7,1],[ 10,0],[ 11,0],[ 14,1],[ 16,3],[ 17,6],[ 17,7],[ 16,10],[ 14,12],[ 11,13],[ 10,13],[ 7,12],[ 5,10],[ 4,7]]]
+font[24]=[[[17,21],[ 7,0]],[[3,21],[ 17,21]]]
+font[25]=[[[8,21],[ 5,20],[ 4,18],[ 4,16],[ 5,14],[ 7,13],[ 11,12],[ 14,11],[ 16,9],[ 17,7],[ 17,4],[ 16,2],[ 15,1],[ 12,0],[ 8,0],[ 5,1],[ 4,2],[ 3,4],[ 3,7],[ 4,9],[ 6,11],[ 9,12],[ 13,13],[ 15,14],[ 16,16],[ 16,18],[ 15,20],[ 12,21],[ 8,21]]]
+font[26]=[[[16,14],[ 15,11],[ 13,9],[ 10,8],[ 9,8],[ 6,9],[ 4,11],[ 3,14],[ 3,15],[ 4,18],[ 6,20],[ 9,21],[ 10,21],[ 13,20],[ 15,18],[ 16,14],[ 16,9],[ 15,4],[ 13,1],[ 10,0],[ 8,0],[ 5,1],[ 4,3]]]
+font[27]=[[[5,14],[ 4,13],[ 5,12],[ 6,13],[ 5,14]],[[5,2],[ 4,1],[ 5,0],[ 6,1],[ 5,2]]]
+font[28]=[[[5,14],[ 4,13],[ 5,12],[ 6,13],[ 5,14]],[[6,1],[ 5,0],[ 4,1],[ 5,2],[ 6,1],[ 6,-1],[ 5,-3],[ 4,-4]]]
+font[29]=[[[20,18],[ 4,9],[ 20,0]]]
+font[30]=[[[4,12],[ 22,12]],[[4,6],[ 22,6]]]
+font[31]=[[[4,18],[ 20,9],[ 4,0]]]
+font[32]=[[[3,16],[ 3,17],[ 4,19],[ 5,20],[ 7,21],[ 11,21],[ 13,20],[ 14,19],[ 15,17],[ 15,15],[ 14,13],[ 13,12],[ 9,10],[ 9,7]],[[9,2],[ 8,1],[ 9,0],[ 10,1],[ 9,2]]]
+font[33]=[[[18.5,13],[ 17.5,15],[ 15.5,16],[ 12.5,16],[ 10.5,15],[ 9.5,14],[ 8.5,11],[ 8.5,8],[ 9.5,6],[ 11.5,5],[ 14.5,5],[ 16.5,6],[ 17.5,8]],[[12.5,16],[ 10.5,14],[ 9.5,11],[ 9.5,8],[ 10.5,6],[ 11.5,5]],[[18.5,16],[ 17.5,8],[ 17.5,6],[ 19.5,5],[ 21.5,5],[ 23.5,7],[ 24.5,10],[ 24.5,12],[ 23.5,15],[ 22.5,17],[ 20.5,19],[ 18.5,20],[ 15.5,21],[ 12.5,21],[ 9.5,20],[ 7.5,19],[ 5.5,17],[ 4.5,15],[ 3.5,12],[ 3.5,9],[ 4.5,6],[ 5.5,4],[ 7.5,2],[ 9.5,1],[ 12.5,0],[ 15.5,0],[ 18.5,1],[ 20.5,2],[ 21.5,3]],[[19.5,16],[ 18.5,8],[ 18.5,6],[ 19.5,5]]]
+font[34]=[[[9,21],[ 1,0]],[[9,21],[ 17,0]],[[4,7],[ 14,7]]]
+font[35]=[[[3.5,21],[ 3.5,0]],[[3.5,21],[ 12.5,21],[ 15.5,20],[ 16.5,19],[ 17.5,17],[ 17.5,15],[ 16.5,13],[ 15.5,12],[ 12.5,11]],[[3.5,11],[ 12.5,11],[ 15.5,10],[ 16.5,9],[ 17.5,7],[ 17.5,4],[ 16.5,2],[ 15.5,1],[ 12.5,0],[ 3.5,0]]]
+font[36]=[[[18.5,16],[ 17.5,18],[ 15.5,20],[ 13.5,21],[ 9.5,21],[ 7.5,20],[ 5.5,18],[ 4.5,16],[ 3.5,13],[ 3.5,8],[ 4.5,5],[ 5.5,3],[ 7.5,1],[ 9.5,0],[ 13.5,0],[ 15.5,1],[ 17.5,3],[ 18.5,5]]]
+font[37]=[[[3.5,21],[ 3.5,0]],[[3.5,21],[ 10.5,21],[ 13.5,20],[ 15.5,18],[ 16.5,16],[ 17.5,13],[ 17.5,8],[ 16.5,5],[ 15.5,3],[ 13.5,1],[ 10.5,0],[ 3.5,0]]]
+font[38]=[[[3.5,21],[ 3.5,0]],[[3.5,21],[ 16.5,21]],[[3.5,11],[ 11.5,11]],[[3.5,0],[ 16.5,0]]]
+font[39]=[[[3,21],[ 3,0]],[[3,21],[ 16,21]],[[3,11],[ 11,11]]]
+font[40]=[[[18.5,16],[ 17.5,18],[ 15.5,20],[ 13.5,21],[ 9.5,21],[ 7.5,20],[ 5.5,18],[ 4.5,16],[ 3.5,13],[ 3.5,8],[ 4.5,5],[ 5.5,3],[ 7.5,1],[ 9.5,0],[ 13.5,0],[ 15.5,1],[ 17.5,3],[ 18.5,5],[ 18.5,8]],[[13.5,8],[ 18.5,8]]]
+font[41]=[[[4,21],[ 4,0]],[[18,21],[ 18,0]],[[4,11],[ 18,11]]]
+font[42]=[[[4,21],[ 4,0]]]
+font[43]=[[[12,21],[ 12,5],[ 11,2],[ 10,1],[ 8,0],[ 6,0],[ 4,1],[ 3,2],[ 2,5],[ 2,7]]]
+font[44]=[[[3.5,21],[ 3.5,0]],[[17.5,21],[ 3.5,7]],[[8.5,12],[ 17.5,0]]]
+font[45]=[[[2.5,21],[ 2.5,0]],[[2.5,0],[ 14.5,0]]]
+font[46]=[[[4,21],[ 4,0]],[[4,21],[ 12,0]],[[20,21],[ 12,0]],[[20,21],[ 20,0]]]
+font[47]=[[[4,21],[ 4,0]],[[4,21],[ 18,0]],[[18,21],[ 18,0]]]
+font[48]=[[[9,21],[ 7,20],[ 5,18],[ 4,16],[ 3,13],[ 3,8],[ 4,5],[ 5,3],[ 7,1],[ 9,0],[ 13,0],[ 15,1],[ 17,3],[ 18,5],[ 19,8],[ 19,13],[ 18,16],[ 17,18],[ 15,20],[ 13,21],[ 9,21]]]
+font[49]=[[[3.5,21],[ 3.5,0]],[[3.5,21],[ 12.5,21],[ 15.5,20],[ 16.5,19],[ 17.5,17],[ 17.5,14],[ 16.5,12],[ 15.5,11],[ 12.5,10],[ 3.5,10]]]
+font[50]=[[[9,21],[ 7,20],[ 5,18],[ 4,16],[ 3,13],[ 3,8],[ 4,5],[ 5,3],[ 7,1],[ 9,0],[ 13,0],[ 15,1],[ 17,3],[ 18,5],[ 19,8],[ 19,13],[ 18,16],[ 17,18],[ 15,20],[ 13,21],[ 9,21]],[[12,4],[ 18,-2]]]
+font[51]=[[[3.5,21],[ 3.5,0]],[[3.5,21],[ 12.5,21],[ 15.5,20],[ 16.5,19],[ 17.5,17],[ 17.5,15],[ 16.5,13],[ 15.5,12],[ 12.5,11],[ 3.5,11]],[[10.5,11],[ 17.5,0]]]
+font[52]=[[[17,18],[ 15,20],[ 12,21],[ 8,21],[ 5,20],[ 3,18],[ 3,16],[ 4,14],[ 5,13],[ 7,12],[ 13,10],[ 15,9],[ 16,8],[ 17,6],[ 17,3],[ 15,1],[ 12,0],[ 8,0],[ 5,1],[ 3,3]]]
+font[53]=[[[8,21],[ 8,0]],[[1,21],[ 15,21]]]
+font[54]=[[[4,21],[ 4,6],[ 5,3],[ 7,1],[ 10,0],[ 12,0],[ 15,1],[ 17,3],[ 18,6],[ 18,21]]]
+font[55]=[[[1,21],[ 9,0]],[[17,21],[ 9,0]]]
+font[56]=[[[2,21],[ 7,0]],[[12,21],[ 7,0]],[[12,21],[ 17,0]],[[22,21],[ 17,0]]]
+font[57]=[[[3,21],[ 17,0]],[[17,21],[ 3,0]]]
+font[58]=[[[1,21],[ 9,11],[ 9,0]],[[17,21],[ 9,11]]]
+font[59]=[[[17,21],[ 3,0]],[[3,21],[ 17,21]],[[3,0],[ 17,0]]]
+font[60]=[[[4,25],[ 4,-7]],[[5,25],[ 5,-7]],[[4,25],[ 11,25]],[[4,-7],[ 11,-7]]]
+font[61]=[[[0,21],[ 14,-3]]]
+font[62]=[[[9,25],[ 9,-7]],[[10,25],[ 10,-7]],[[3,25],[ 10,25]],[[3,-7],[ 10,-7]]]
+font[63]=[[[6,15],[ 8,18],[ 10,15]],[[3,12],[ 8,17],[ 13,12]],[[8,17],[ 8,0]]]
+font[64]=[[[0,-2],[ 16,-2]]]
+font[65]=[[[6,21],[ 5,20],[ 4,18],[ 4,16],[ 5,15],[ 6,16],[ 5,17]]]
+font[66]=[[[15.5,14],[ 15.5,0]],[[15.5,11],[ 13.5,13],[ 11.5,14],[ 8.5,14],[ 6.5,13],[ 4.5,11],[ 3.5,8],[ 3.5,6],[ 4.5,3],[ 6.5,1],[ 8.5,0],[ 11.5,0],[ 13.5,1],[ 15.5,3]]]
+font[67]=[[[3.5,21],[ 3.5,0]],[[3.5,11],[ 5.5,13],[ 7.5,14],[ 10.5,14],[ 12.5,13],[ 14.5,11],[ 15.5,8],[ 15.5,6],[ 14.5,3],[ 12.5,1],[ 10.5,0],[ 7.5,0],[ 5.5,1],[ 3.5,3]]]
+font[68]=[[[15,11],[ 13,13],[ 11,14],[ 8,14],[ 6,13],[ 4,11],[ 3,8],[ 3,6],[ 4,3],[ 6,1],[ 8,0],[ 11,0],[ 13,1],[ 15,3]]]
+font[69]=[[[15.5,21],[ 15.5,0]],[[15.5,11],[ 13.5,13],[ 11.5,14],[ 8.5,14],[ 6.5,13],[ 4.5,11],[ 3.5,8],[ 3.5,6],[ 4.5,3],[ 6.5,1],[ 8.5,0],[ 11.5,0],[ 13.5,1],[ 15.5,3]]]
+font[70]=[[[3,8],[ 15,8],[ 15,10],[ 14,12],[ 13,13],[ 11,14],[ 8,14],[ 6,13],[ 4,11],[ 3,8],[ 3,6],[ 4,3],[ 6,1],[ 8,0],[ 11,0],[ 13,1],[ 15,3]]]
+font[71]=[[[11,21],[ 9,21],[ 7,20],[ 6,17],[ 6,0]],[[3,14],[ 10,14]]]
+font[72]=[[[15.5,14],[ 15.5,-2],[ 14.5,-5],[ 13.5,-6],[ 11.5,-7],[ 8.5,-7],[ 6.5,-6]],[[15.5,11],[ 13.5,13],[ 11.5,14],[ 8.5,14],[ 6.5,13],[ 4.5,11],[ 3.5,8],[ 3.5,6],[ 4.5,3],[ 6.5,1],[ 8.5,0],[ 11.5,0],[ 13.5,1],[ 15.5,3]]]
+font[73]=[[[4.5,21],[ 4.5,0]],[[4.5,10],[ 7.5,13],[ 9.5,14],[ 12.5,14],[ 14.5,13],[ 15.5,10],[ 15.5,0]]]
+font[74]=[[[3,21],[ 4,20],[ 5,21],[ 4,22],[ 3,21]],[[4,14],[ 4,0]]]
+font[75]=[[[5,21],[ 6,20],[ 7,21],[ 6,22],[ 5,21]],[[6,14],[ 6,-3],[ 5,-6],[ 3,-7],[ 1,-7]]]
+font[76]=[[[3.5,21],[ 3.5,0]],[[13.5,14],[ 3.5,4]],[[7.5,8],[ 14.5,0]]]
+font[77]=[[[4,21],[ 4,0]]]
+font[78]=[[[4,14],[ 4,0]],[[4,10],[ 7,13],[ 9,14],[ 12,14],[ 14,13],[ 15,10],[ 15,0]],[[15,10],[ 18,13],[ 20,14],[ 23,14],[ 25,13],[ 26,10],[ 26,0]]]
+font[79]=[[[4.5,14],[ 4.5,0]],[[4.5,10],[ 7.5,13],[ 9.5,14],[ 12.5,14],[ 14.5,13],[ 15.5,10],[ 15.5,0]]]
+font[80]=[[[8.5,14],[ 6.5,13],[ 4.5,11],[ 3.5,8],[ 3.5,6],[ 4.5,3],[ 6.5,1],[ 8.5,0],[ 11.5,0],[ 13.5,1],[ 15.5,3],[ 16.5,6],[ 16.5,8],[ 15.5,11],[ 13.5,13],[ 11.5,14],[ 8.5,14]]]
+font[81]=[[[3.5,14],[ 3.5,-7]],[[3.5,11],[ 5.5,13],[ 7.5,14],[ 10.5,14],[ 12.5,13],[ 14.5,11],[ 15.5,8],[ 15.5,6],[ 14.5,3],[ 12.5,1],[ 10.5,0],[ 7.5,0],[ 5.5,1],[ 3.5,3]]]
+font[82]=[[[15.5,14],[ 15.5,-7]],[[15.5,11],[ 13.5,13],[ 11.5,14],[ 8.5,14],[ 6.5,13],[ 4.5,11],[ 3.5,8],[ 3.5,6],[ 4.5,3],[ 6.5,1],[ 8.5,0],[ 11.5,0],[ 13.5,1],[ 15.5,3]]]
+font[83]=[[[3.5,14],[ 3.5,0]],[[3.5,8],[ 4.5,11],[ 6.5,13],[ 8.5,14],[ 11.5,14]]]
+font[84]=[[[14.5,11],[ 13.5,13],[ 10.5,14],[ 7.5,14],[ 4.5,13],[ 3.5,11],[ 4.5,9],[ 6.5,8],[ 11.5,7],[ 13.5,6],[ 14.5,4],[ 14.5,3],[ 13.5,1],[ 10.5,0],[ 7.5,0],[ 4.5,1],[ 3.5,3]]]
+font[85]=[[[6,21],[ 6,4],[ 7,1],[ 9,0],[ 11,0]],[[3,14],[ 10,14]]]
+font[86]=[[[4.5,14],[ 4.5,4],[ 5.5,1],[ 7.5,0],[ 10.5,0],[ 12.5,1],[ 15.5,4]],[[15.5,14],[ 15.5,0]]]
+font[87]=[[[2,14],[ 8,0]],[[14,14],[ 8,0]]]
+font[88]=[[[3,14],[ 7,0]],[[11,14],[ 7,0]],[[11,14],[ 15,0]],[[19,14],[ 15,0]]]
+font[89]=[[[3.5,14],[ 14.5,0]],[[14.5,14],[ 3.5,0]]]
+font[90]=[[[2,14],[ 8,0]],[[14,14],[ 8,0],[ 6,-4],[ 4,-6],[ 2,-7],[ 1,-7]]]
+font[91]=[[[14.5,14],[ 3.5,0]],[[3.5,14],[ 14.5,14]],[[3.5,0],[ 14.5,0]]]
+font[92]=[[[9,25],[ 7,24],[ 6,23],[ 5,21],[ 5,19],[ 6,17],[ 7,16],[ 8,14],[ 8,12],[ 6,10]],[[7,24],[ 6,22],[ 6,20],[ 7,18],[ 8,17],[ 9,15],[ 9,13],[ 8,11],[ 4,9],[ 8,7],[ 9,5],[ 9,3],[ 8,1],[ 7,0],[ 6,-2],[ 6,-4],[ 7,-6]],[[6,8],[ 8,6],[ 8,4],[ 7,2],[ 6,1],[ 5,-1],[ 5,-3],[ 6,-5],[ 7,-6],[ 9,-7]]]
+font[93]=[[[4,25],[ 4,-7]]]
+font[94]=[[[5,25],[ 7,24],[ 8,23],[ 9,21],[ 9,19],[ 8,17],[ 7,16],[ 6,14],[ 6,12],[ 8,10]],[[7,24],[ 8,22],[ 8,20],[ 7,18],[ 6,17],[ 5,15],[ 5,13],[ 6,11],[ 10,9],[ 6,7],[ 5,5],[ 5,3],[ 6,1],[ 7,0],[ 8,-2],[ 8,-4],[ 7,-6]],[[8,8],[ 6,6],[ 6,4],[ 7,2],[ 8,1],[ 9,-1],[ 9,-3],[ 8,-5],[ 7,-6],[ 5,-7]]]
+font[95]=[[[3,6],[ 3,8],[ 4,11],[ 6,12],[ 8,12],[ 10,11],[ 14,8],[ 16,7],[ 18,7],[ 20,8],[ 21,10]],[[3,8],[ 4,10],[ 6,11],[ 8,11],[ 10,10],[ 14,7],[ 16,6],[ 18,6],[ 20,7],[ 21,10],[ 21,12]]]
+
+// make circle shape
+circle = function (radius, steps, centerX, centerY) {
+    shape = []
+    for (var i = 0; i < steps+1 ; i++) {
+        x = centerX + radius * Math.cos(Math.PI * i / steps * 2 - Math.PI / 2)
+        y = centerY + radius * Math.sin(Math.PI * i / steps * 2 - Math.PI / 2)
+        shape.push(new BABYLON.Vector3(x, y, 0))
+    }
+}
+
+make_textline = function (str, x,y,z,align, color,fontscale, spacing,fat,boldness,gloss) {
+   fontscale/=100
+    if(fat){
+        circle(boldness, 36, 0, 0)
+    }
+    mat = new BABYLON.StandardMaterial("mat1", scene);
+  
+    mat.diffuseColor = new BABYLON.Color3(color[0], color[1], color[2]);
+    mat.emissiveColor = new BABYLON.Color3.Black();
+    mat.specularColor = new BABYLON.Color3(gloss, gloss, gloss);
+    mat.backFaceCulling = true;
+
+    word = new BABYLON.Mesh.CreateBox("word", 0, scene);
+    word.visibility = total = 0
+    for (letter = 0; letter < str.length; letter++) {
+        char = make_character(font[str.charCodeAt(letter) - 31], color,fontscale,spacing,str.charCodeAt(letter) - 31,fat);
+        char.position.x = total - min * fontscale
+        total += size + spacing
+        char.parent = word
+    }
+    if (align == "center") {
+        var offset = total / 2
+    } else if (align == "right") {
+        var offset = total
+    } else if (align == "left") {
+        var offset = 0
+    }
+    var children = word.getChildren();
+    for (var i = 0; i < children.length; i++) {
+        children[i].position.x -= offset
+    }
+    word.position=new BABYLON.Vector3(x,y,z)
+    return word
+}
+make_character = function (a, color, fontscale, spacing,ss,fat,boldness) {
+    min = 100
+    max = -100
+    tempchar =  new BABYLON.Mesh.CreateBox("name", 0, scene);
+    tempchar.visibility = 0
+    for (tt = 0; tt < a.length; tt++) {
+        char = a[tt]
+        var ppath = []
+        for (t = 0; t < char.length; t++) {
+            ppath.push(new BABYLON.Vector3(char[t][0] * fontscale, char[t][1] * fontscale, 0));
+            min = Math.min(min, char[t][0])
+            max = Math.max(max, char[t][0])
+        }
+        if(ss!=1){
+            if(fat){
+                var lines1 = BABYLON.MeshBuilder.ExtrudeShape("extrudedShape", {
+                    cap: 3,
+                    shape: shape,
+                    path: ppath,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE
+                }, scene);
+                lines1.material = mat
+                lines1.material.diffuseColor = new BABYLON.Color3(color[0], color[1], color[2]);
+            }else{
+                lines1 = BABYLON.Mesh.CreateLines("lines", ppath, scene);}
+                lines1.color = new BABYLON.Color3(color[0], color[1], color[2]);
+                lines1.parent = tempchar
+            } 
+        }
+        size = (max - min) * fontscale
+        return tempchar
+}
+
+document.getElementById("camX").onchange = moveCamera;
+document.getElementById("camY").onchange = moveCamera;
+document.getElementById("camZ").onchange = moveCamera;
+
+
+function moveCamera() {
+  var xvalue = document.getElementById("camX").value;
+  var yvalue = document.getElementById("camY").value;
+  var zvalue = document.getElementById("camZ").value;
+  var z = (xvalue == "") ? 0 : parseInt(xvalue);
+  var x = (yvalue == "") ? 0 : parseInt(-yvalue);
+  var y = (zvalue == "") ? 0 : parseInt(zvalue);
+
+  camera.radius = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+  camera.alpha = Math.acos(z/camera.radius);
+  camera.beta = Math.atan2(x, y);
+}
+
+document.getElementById("laX").onchange = moveTargetCamera;
+document.getElementById("laY").onchange = moveTargetCamera;
+document.getElementById("laZ").onchange = moveTargetCamera;
+
+function moveTargetCamera() {
+  var xvalue = document.getElementById("laX").value;
+  var yvalue = document.getElementById("laY").value;
+  var zvalue = document.getElementById("laZ").value;
+  var x = (xvalue == "") ? 0 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0 : parseInt(zvalue);
+
+  camera.setTarget(new BABYLON.Vector3(x, y, z));
+}
+
+// show axis
+var showAxis = function(size) {
+  var makeTextPlane = function(text, color, size) {
+  var dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 50, scene, true);
+  dynamicTexture.hasAlpha = true;
+  dynamicTexture.drawText(text, 5, 40, "bold 36px Arial", color , "transparent", true);
+  var plane = new BABYLON.Mesh.CreatePlane("TextPlane", size, scene, true);
+  plane.material = new BABYLON.StandardMaterial("TextPlaneMaterial", scene);
+  plane.material.backFaceCulling = false;
+  plane.material.specularColor = new BABYLON.Color3(0, 0, 0);
+  plane.material.diffuseTexture = dynamicTexture;
+  return plane;
+   };
+
+  var axisX = BABYLON.Mesh.CreateLines("axisX", [ 
+    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(-size, 0, 0), new BABYLON.Vector3(-size * 0.95, 0.05 * size, 0), 
+    new BABYLON.Vector3(-size, 0, 0), new BABYLON.Vector3(-size * 0.95, -0.05 * size, 0)
+    ], scene);
+  axisX.color = new BABYLON.Color3(1, 0, 0);
+  var xChar = makeTextPlane("X", "red", size / 10);
+  xChar.position = new BABYLON.Vector3(-0.9 * size, -0.05 * size, 0);
+  xChar.parent = axisX;
+  var axisY = BABYLON.Mesh.CreateLines("axisY", [
+      new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0), 
+      new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( 0.05 * size, size * 0.95, 0)
+      ], scene);
+  axisY.color = new BABYLON.Color3(0, 1, 0);
+  var yChar = makeTextPlane("Y", "green", size / 10);
+  yChar.position = new BABYLON.Vector3(0, 0.9 * size, -0.05 * size);
+  yChar.parent = axisY;
+  var axisZ = BABYLON.Mesh.CreateLines("axisZ", [
+      new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0 , -0.05 * size, size * 0.95),
+      new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0, 0.05 * size, size * 0.95)
+      ], scene);
+  axisZ.color = new BABYLON.Color3(0, 0, 1);
+  var zChar = makeTextPlane("Z", "blue", size / 10);
+  zChar.position = new BABYLON.Vector3(0, 0.05 * size, 0.9 * size);
+  zChar.parent = axisZ;
+
+  obj3d.push(axisX);
+  obj3d[obj3d.length - 1].id = "showAxis X";
+  obj3d.push(axisY);
+  obj3d[obj3d.length - 1].id = "showAxis Y";
+  obj3d.push(axisZ);
+  obj3d[obj3d.length - 1].id = "showAxis Z";
+};
+
+document.getElementById("showAxis").onclick = function() {
+  if (document.getElementById("showAxis").checked == true) {
+    showAxis(5);
+  } else {
+    obj3d.forEach(obj => {
+      if (obj.id.toString().includes("showAxis")) {
+        obj.dispose();
+      }
+    });
+  }
+}
+
+/** =================================  END BABYLONJS CANVAS  ======================================== */
 
 /** Helper Functions */
 function populateFontMenu() {
@@ -878,6 +1467,16 @@ function populateThemeMenu() {
 }
 
 function updateInput() {
+  // clear data
+  resetScene();
+  var table = document.getElementById("traceTable");
+  while (table.hasChildNodes()) {
+    table.removeChild(table.firstChild);
+  }
+  var graphDiv = document.getElementById("plotTab");
+  while (graphDiv.data != undefined && graphDiv.data.length>0){
+    Plotly.deleteTraces(graphDiv, [0]);
+  }
   document.getElementById("undoAction").disabled = !editor.session.getUndoManager().hasUndo();
   document.getElementById("redoAction").disabled = !editor.session.getUndoManager().hasRedo();
   req.open('POST', url, true);
@@ -994,21 +1593,20 @@ function download_csv(csv, filename) {
 }
 
 function showBrowser(file) {
-  if (file.hasOwnProperty('children') && file.children.length > 0) {
-    for (i = 0; i < file.children.length; i++) {
+  if (file[0][0] == 'children' && file[0][1].length > 0) {
+    for (i = 0; i < file[0][1].length; i++) {
       let folderNode = document.createElement("li");
       let span = document.createElement('span');
-      span.innerHTML = file.children[i].name;
+      span.innerHTML = file[0][1][i][2][1];
       span.className = 'caret';
       folderNode.appendChild(span);
-      let nestedNode = document.createElement("ul");
+      let nestedNode = document.createElement("ol");
       nestedNode.className = 'nestedNode';
       folderNode.appendChild(nestedNode);
-      createChildNodes(file.children[i], nestedNode)
+      createChildNodes(file[0][1][i][0], nestedNode)
       document.getElementById("browserAreaList").appendChild(folderNode);
     }
   }
-
   // Show/Hide folders
   var toggler = document.getElementsByClassName("caret");
   var i;
@@ -1021,31 +1619,31 @@ function showBrowser(file) {
 }
 
 function createChildNodes(file, parentNode) {
-  if (file.hasOwnProperty('children') && file.children.length > 0) {
-    for (let j = 0; j < file.children.length; j++) {
-      if (file.children[j].hasOwnProperty('children')) {
+  if (file[0] == 'children' && file[1].length > 0) {
+    for (let j = 0; j < file[1].length; j++) {
+      if (file[1][j][0][0] == 'children') {
         let folderNodeC = document.createElement("li");
         let spanC = document.createElement('span');
-        spanC.innerHTML = file.children[j].name;
+        spanC.innerHTML = file[1][j][2][1];
         spanC.className = 'caret';
         folderNodeC.appendChild(spanC);
-        let nestedNodeC = document.createElement("ul");
+        let nestedNodeC = document.createElement("ol");
         nestedNodeC.className = 'nestedNode';
-        if (file.children[j].children.length > 0) {
-          createChildNodes(file.children[j], nestedNodeC);
+        if (file[1][j][0][1].length > 0) {
+          createChildNodes(file[1][j][0], nestedNodeC);
         }
         folderNodeC.appendChild(nestedNodeC);
         parentNode.appendChild(folderNodeC);
       }
       else {
         let fileNodeC = document.createElement("li");
-        fileNodeC.id = '[ID]' + file.children[j].id;
+        fileNodeC.id = '[ID]' + file[1][j][0][1];
         fileNodeC.addEventListener("click", function () { 
           req.open('POST', url, true);
           req.setRequestHeader("Csrf-Token", CsrfToken);
           req.send("[" + JSON.stringify(selectFile(fileNodeC.id.substring(4))) + "]\r") 
         });
-        let textC = document.createTextNode(file.children[j].name);
+        let textC = document.createTextNode(file[1][j][1][1]);
         fileNodeC.style.cursor = "pointer";
         fileNodeC.appendChild(textC);
         parentNode.appendChild(fileNodeC);
@@ -1054,11 +1652,46 @@ function createChildNodes(file, parentNode) {
   }
   else {
     let fileNode = document.createElement("li");
-    fileNode.id = '[ID]' + file.id;
+    fileNode.id = '[ID]' + file[0][1];
     fileNode.addEventListener("click", function () { console.log(fileNode.id) });
-    let text = document.createTextNode(file.name);
+    let text = document.createTextNode(file[1][1]);
     fileNode.appendChild(text);
   }
+}
+
+function sortByKey(jsObj){
+  var sortedArray = [];
+  var keywords = ["children", "id", "name"];
+
+  // Push each JSON Object entry in array by [key, value]
+  for(var i in jsObj)
+  {
+    if (keywords.find(elmt => elmt == i) != undefined){
+      var shuffledArray = jsObj[i];
+      if (i == 'children'){
+        shuffledArray.sort((a, b) => {
+          if (a.name != undefined && b.name != undefined){
+            a.name.localeCompare(b.name);
+          } else {
+            a[2][1].localeCompare(b[2][1]);
+          }
+        });
+      }
+      sortedArray.push([i, shuffledArray]);
+    } else {
+      sortedArray.push(jsObj[i]);
+    }
+  }
+
+  sortedArray.forEach(obj => {
+    if (obj[0] == 'children') {
+      for (let j = 0; j < obj[1].length; j++){
+        obj[1][j] = sortByKey(obj[1][j]);
+      }
+    }
+  })
+
+  return sortedArray.sort();
 }
 
 /** Json and miscallenious objects */
