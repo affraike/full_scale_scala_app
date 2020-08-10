@@ -493,7 +493,6 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
-  document.getElementById("loader").style.display = "flex";
   populateFontMenu();
   populateThemeMenu();
   document.getElementById("newAction").onclick = function () {
@@ -839,22 +838,20 @@ window.onload = function () {
   //Top view
   let xyBtn = document.getElementById('topViewIcon');
   xyBtn.onclick = function () {
-    camera.beta = 0;
+    camera.position = new BABYLON.Vector3(0, 0, 10);
     camera.setTarget(new BABYLON.Vector3.Zero);
 
   };
   //Right view
   let yzBtn = document.getElementById('rightViewIcon');
   yzBtn.onclick = function () {
-    camera.alpha = Math.PI / 2;
-    camera.beta = Math.PI / 2;
+    camera.position = new BABYLON.Vector3(10, 0, 0);
     camera.setTarget(new BABYLON.Vector3.Zero);
   };
   //Front view
   let xzBtn = document.getElementById('frontViewIcon');
   xzBtn.onclick = function () {
-    camera.alpha = 0;
-    camera.beta = Math.PI / 2;
+    camera.position = new BABYLON.Vector3(0, 10, 0);
     camera.setTarget(new BABYLON.Vector3.Zero);
   };
   //Faster Animation
@@ -962,6 +959,11 @@ function InitializeBabylonJSScene() {
         time.innerHTML = "Time: " + roundUp(frame / 60, 2) + " sec";
       }
     }
+  });
+
+  scene.registerAfterRender(function() {
+    updateCameraTracking();
+    updateCameraTargetTracking();
   });
 
   scene.clearColor = new BABYLON.Color4(192, 192, 192, 0);
@@ -1376,13 +1378,34 @@ function moveCamera() {
   var xvalue = document.getElementById("camX").value;
   var yvalue = document.getElementById("camY").value;
   var zvalue = document.getElementById("camZ").value;
-  var z = (xvalue == "") ? 0 : parseInt(xvalue);
-  var x = (yvalue == "") ? 0 : parseInt(-yvalue);
-  var y = (zvalue == "") ? 0 : parseInt(zvalue);
+  var x = (xvalue == "") ? 0 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0 : parseInt(zvalue);
 
-  camera.radius = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-  camera.alpha = Math.acos(z/camera.radius);
-  camera.beta = Math.atan2(x, y);
+  if (x != camera.position.x || y != camera.position.y || z != camera.position.z){
+    camera.position = new BABYLON.Vector3(x, y, z);
+  }
+}
+
+function updateCameraTracking() {
+  var inputx = document.getElementById("camX");
+  var inputy = document.getElementById("camY");
+  var inputz = document.getElementById("camZ");
+  
+  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
+    var xvalue = inputx.value;
+    var yvalue = inputy.value;
+    var zvalue = inputz.value;
+    var x = (xvalue == "") ? 0 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0 : parseInt(zvalue);
+
+    if (x.toFixed(2) != camera.position.x.toFixed(2) || y.toFixed(2) != camera.position.y.toFixed(2) || z.toFixed(2) != camera.position.z.toFixed(2)){
+      inputx.value = camera.position.x.toFixed(2);
+      inputy.value = camera.position.y.toFixed(2);
+      inputz.value = camera.position.z.toFixed(2);
+    }
+  }
 }
 
 document.getElementById("laX").onchange = moveTargetCamera;
@@ -1400,6 +1423,28 @@ function moveTargetCamera() {
   camera.setTarget(new BABYLON.Vector3(x, y, z));
 }
 
+function updateCameraTargetTracking() {
+  var inputx = document.getElementById("laX");
+  var inputy = document.getElementById("laY");
+  var inputz = document.getElementById("laZ");
+  
+  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
+    var xvalue = inputx.value;
+    var yvalue = inputy.value;
+    var zvalue = inputz.value;
+    var x = (xvalue == "") ? 0 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0 : parseInt(zvalue);
+    var target = camera.getTarget();
+
+    if (x.toFixed(2) != target.x.toFixed(2) || y.toFixed(2) != target.y.toFixed(2) || z.toFixed(2) != target.z.toFixed(2)){
+      inputx.value = target.x.toFixed(2);
+      inputy.value = target.y.toFixed(2);
+      inputz.value = target.z.toFixed(2);
+    }
+  }
+}
+
 // show axis
 var showAxis = function(size) {
   var makeTextPlane = function(text, color, size) {
@@ -1415,12 +1460,12 @@ var showAxis = function(size) {
    };
 
   var axisX = BABYLON.Mesh.CreateLines("axisX", [ 
-    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(-size, 0, 0), new BABYLON.Vector3(-size * 0.95, 0.05 * size, 0), 
-    new BABYLON.Vector3(-size, 0, 0), new BABYLON.Vector3(-size * 0.95, -0.05 * size, 0)
+    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0.05 * size, 0), 
+    new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, -0.05 * size, 0)
     ], scene);
   axisX.color = new BABYLON.Color3(1, 0, 0);
   var xChar = makeTextPlane("X", "red", size / 10);
-  xChar.position = new BABYLON.Vector3(-0.9 * size, -0.05 * size, 0);
+  xChar.position = new BABYLON.Vector3(0.9 * size, -0.05 * size, 0);
   xChar.parent = axisX;
   var axisY = BABYLON.Mesh.CreateLines("axisY", [
       new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0), 

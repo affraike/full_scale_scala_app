@@ -65,7 +65,7 @@ object App {
   // Handle API rendering
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
-    div(id := "loader", display := "none",
+    div(id := "loader",
       div(
         div(
           display:= "flex",
@@ -419,11 +419,11 @@ object App {
                     span(id := "threedCheckboxText","Show Axis")
                   ),
                   label(
-                    input(`type` := "checkbox", id := "streamAnimation"),
+                    input(`type` := "checkbox", id := "streamAnimation", disabled:= true),
                     span(id := "threedCheckboxText","Stream Animation")
                   ),
                   label(
-                    input(`type` := "checkbox", id := "matchWallClock"),
+                    input(`type` := "checkbox", id := "matchWallClock", disabled:= true),
                     span(id := "threedCheckboxText","Match Wall Clock")
                   )
                 )
@@ -441,12 +441,12 @@ object App {
                     src:="./icons/stop.png"
                   )
                 ),
-                button(id:= "slowerIcon",
+                button(id:= "slowerIcon", disabled:= true,
                   img(
                     src:="./icons/slower.png"
                   )
                 ),
-                button(id:= "fasterIcon",
+                button(id:= "fasterIcon", disabled:= true,
                   img(
                     src:="./icons/faster.png"
                   )
