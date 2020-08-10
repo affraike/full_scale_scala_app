@@ -77,16 +77,6 @@ object App {
       )
     ),
     div(cls := "navbar",
-      label(
-        cls:="switch",
-        input(
-          typ:="checkbox",
-          id:="launchToggle",
-        ),
-        span(
-          cls:="sliderToggle round",
-        )
-      ),
       div(id := "navbarMenu",
         ul(
           li(cls := "navMenuItem",
@@ -331,6 +321,7 @@ object App {
             ul(id := "consoleAreaList")
           ),
           div(id := "browserTab", cls := "ctabcontent", display:="none", height:="340px", overflow:="scroll",
+            span(id:= "browserError", display:= "none", "An error occured while loading examples, please reboot server."),
             ul(id := "browserAreaList")
           ),
           div(id := "dropTab", cls := "ctabcontent", display:="none", height:="341px"
@@ -347,14 +338,18 @@ object App {
           button(id := "threeDButton", cls := "vtablinks","_3D"
           )
         ),
-        div(id := "plotTab", cls := "vtabcontent", height:= "862px", width := "calc(100% - 6px)", overflowY:= "scroll"),
+        div(id := "plotTab", cls := "vtabcontent", height:= "862px", width := "calc(100% - 6px)", overflowY:= "scroll",
+          span(id:= "plotTabError", display:= "none", "An error occured while loading Plot data, please try again.")
+        ),
         div(id := "traceTab", cls := "vtabcontent", display:= "none", height:= "862px", width := "calc(100% - 6px)",
+          span(id:= "traceTabError", display:= "none", "An error occured while loading Table data, please try again."),
           div(
             overflowY:= "scroll", overflowX:= "scroll",
             table(id := "traceTable")
           )
         ),
         div(id := "threeDtab", cls := "vtabcontent", display:= "none", height:= "862px", width := "calc(100% - 6px)",
+          span(id:= "threeDTabError", display:= "none", "An error occured while loading 3D animation, please try again."),
           div(id := "canvasPanel",
             //div(textAlign:="center", display:="grid", alignContent:="center", height:="100%", width:="100%",
             //  span("3D panel not yet implemented"),

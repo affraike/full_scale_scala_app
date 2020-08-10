@@ -13,14 +13,19 @@ function  handleMessage(messageData) {
     if (!Array.isArray(obj)) {
       switch (obj.event) {
         case "firstRes":
-          console.log("send jsReady");
-          req.open('POST', url, true);
-          req.setRequestHeader("Csrf-Token", CsrfToken);
-          req.send("[" + JSON.stringify(jsReady) + "]\r");
-          req.onload = function(e) {
-            console.log(this.responseText);
-          };
-          break;
+          try {
+            console.log("send jsReady");
+            req.open('POST', url, true);
+            req.setRequestHeader("Csrf-Token", CsrfToken);
+            req.send("[" + JSON.stringify(jsReady) + "]\r");
+            req.onload = function(e) {
+              console.log(this.responseText);
+            };
+            break;
+          }
+          catch {
+            console.log('An error occured during initialisation, please reboot server.')
+          }
         case "longMessage":
           console.log("the data has been splitted into " + obj.size + " chunks");
           break;
@@ -132,44 +137,59 @@ function  handleMessage(messageData) {
     else {
       if (obj[0].hasOwnProperty('action')) {
         if (obj[0].action === 'filetree') {
-          console.log(sortByKey(obj[1]));
-          showBrowser(sortByKey(obj[1]));
+          try {
+            document.getElementById('browserError').style.display = "none";
+            console.log(sortByKey(obj[1]));
+            showBrowser(sortByKey(obj[1]));
+          }
+          catch {
+            document.getElementById('browserError').style.display = "block";
+          }
+          if (!document.getElementById('browserAreaList').hasChildNodes()) {
+            document.getElementById('browserError').style.display = "block";
+          }
         }
         else if (obj[0].action === 'threedAllFrames') {
           // TODO This is the json object containing all the frames.
-          let complete3Dframes = obj;
-          load3Ddataset(obj);
-          console.log(obj)
-          /** ---------- How to enable the 3D Tab ----------
-           * In order for the 3DTab to work you need to follow these steps:
-           * - Enable the canvas in acumen.html file
-           * - Import both the babylon library and your custom babylon js file
-           * - Send from this js file to babylon's through a method. For example: load3Ddataset(obj);
-           *
-           * ---------- How the dataset is constructed ----------
-           * Each frame contains the objects, which are represented as followed:
-           * 1. type:
-           *    - newObj   (for new objects)
-           *    - tranform (for transformations of existing objects)
-           * 2. data:
-           *    - id
-           *    - name
-           *    - path
-           *    - angle
-           *    - position
-           *    - color
-           *    - coordinates
-           *    - position
-           *    - size
-           *    - text
-           *    - transparency
-           *    - height
-           *
-           * The last object of the json file is the camera options, which are represented as followed:
-           * 1. type: "camera"
-           * 2. position
-           * 3. lookAtPosition
-          */
+          try {
+            document.getElementById('threeDTabError').style.display = "none";
+            let complete3Dframes = obj;
+            load3Ddataset(obj);
+            console.log(obj)
+            /** ---------- How to enable the 3D Tab ----------
+             * In order for the 3DTab to work you need to follow these steps:
+             * - Enable the canvas in acumen.html file
+             * - Import both the babylon library and your custom babylon js file
+             * - Send from this js file to babylon's through a method. For example: load3Ddataset(obj);
+             *
+             * ---------- How the dataset is constructed ----------
+             * Each frame contains the objects, which are represented as followed:
+             * 1. type:
+             *    - newObj   (for new objects)
+             *    - tranform (for transformations of existing objects)
+             * 2. data:
+             *    - id
+             *    - name
+             *    - path
+             *    - angle
+             *    - position
+             *    - color
+             *    - coordinates
+             *    - position
+             *    - size
+             *    - text
+             *    - transparency
+             *    - height
+             *
+             * The last object of the json file is the camera options, which are represented as followed:
+             * 1. type: "camera"
+             * 2. position
+             * 3. lookAtPosition
+            */
+          }
+          catch {
+            document.getElementById('traceTabError').style.display = "block";
+          }
         }
         else if (obj[0].action === 'populateSemantics') {
           for (i = 1; i < obj.length; i++) {
@@ -240,117 +260,133 @@ function  handleMessage(messageData) {
       }
       else if (obj[0].hasOwnProperty('event')) {
         if (obj[0].event === "traceTable") {
-          var table = document.getElementById("traceTable");
-          while (table.hasChildNodes()) {
-            table.removeChild(table.firstChild);
-          }
-          for (i = 0; i < obj[1].length; i++) {
-            var rowNode = document.createElement("TR");
-            for (var j in obj[1][i]) {
-              var columnNode;
-              if (i == 0) columnNode = document.createElement("TH");
-              else columnNode = document.createElement("TD");
-              var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
-              columnNode.appendChild(textnode);
-              rowNode.appendChild(columnNode);
+          try {
+            document.getElementById('traceTabError').style.display = "none";
+            var table = document.getElementById("traceTable");
+            while (table.hasChildNodes()) {
+              table.removeChild(table.firstChild);
             }
-            table.appendChild(rowNode);
+            for (i = 0; i < obj[1].length; i++) {
+              var rowNode = document.createElement("TR");
+              for (var j in obj[1][i]) {
+                var columnNode;
+                if (i == 0) columnNode = document.createElement("TH");
+                else columnNode = document.createElement("TD");
+                var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
+                columnNode.appendChild(textnode);
+                rowNode.appendChild(columnNode);
+              }
+              table.appendChild(rowNode);
+            }
+          }
+          catch {
+            var table = document.getElementById("traceTable");
+            while (table.hasChildNodes()) {
+              table.removeChild(table.firstChild);
+            }
+            document.getElementById('traceTabError').style.display = "block";
           }
         }
         else if (obj[0].event === "plotter") {
-          var plotCharts = new Array();
-          switch (obj[0].type) {
-            case "doubles":
-              for (i = 1; i < obj.length; i++) {
-                plotCharts.push(new Array());
-                for (var j in obj[i].data) {
-                  plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j].x, y: obj[i].data[j].y });
-                }
-              }
-              var xArray = [];
-              var yArray = [];
-              var data = [];
-              var temp = 1;                            //FIXME Possible bug in Plot.ly!
-              for (var i in plotCharts) {
-                for (var j in plotCharts[i]) {
-                  xArray.push(plotCharts[i][j].x);
-                  yArray.push(plotCharts[i][j].y);
-                }
-                var trace = {
-                  x: xArray,
-                  y: yArray,
-                  xaxis: 'x' + temp,
-                  yaxis: 'y' + temp,
-                  name: obj[temp].title,
-                  type: 'scatter',
-                  mode: 'lines'
-                };
-                data.push(trace);
-                xArray = [];
-                yArray = [];
-                temp += 1;
-              }
-              var layout = {
-                grid: { rows: data.length, columns: 1, pattern: 'independent' },
-              };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
-              break;
-            case "discrete":
-              console.log("Not yet implemented");
-              break;
-            case "enclosure":
-              var plotTitles = [];
-              for (i = 1; i < obj.length; i++) {
-                plotTitles.push(obj[i].title);
-                for (var j in obj[i].data) {
+          try {
+            document.getElementById('plotTabError').style.display = "none";
+            var plotCharts = new Array();
+            switch (obj[0].type) {
+              case "doubles":
+                for (i = 1; i < obj.length; i++) {
                   plotCharts.push(new Array());
-                  for (var k in obj[i].data[j]) {
-                    plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j][k].x, y: obj[i].data[j][k].y });
+                  for (var j in obj[i].data) {
+                    plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j].x, y: obj[i].data[j].y });
                   }
                 }
-              }
-              console.log(plotCharts[3].length);
-              var xArray = [];
-              var yArray = [];
-              var data = [];
-              var temp = 1;                            // FIXME Possible bug in Plot.ly!
-              for (var i in plotCharts) {
-                for (var j in plotCharts[i]) {
-                  xArray.push(plotCharts[i][j].x);
-                  yArray.push(plotCharts[i][j].y);
-                }
-                var trace = {};
-                if (i % 2 == 0) {                      // FIXME check input
-                  if (i >= 1) temp += 1;
-                  trace = {
+                var xArray = [];
+                var yArray = [];
+                var data = [];
+                var temp = 1;                            //FIXME Possible bug in Plot.ly!
+                for (var i in plotCharts) {
+                  for (var j in plotCharts[i]) {
+                    xArray.push(plotCharts[i][j].x);
+                    yArray.push(plotCharts[i][j].y);
+                  }
+                  var trace = {
                     x: xArray,
                     y: yArray,
                     xaxis: 'x' + temp,
                     yaxis: 'y' + temp,
-                    name: plotTitles[temp - 1],
+                    name: obj[temp].title,
                     type: 'scatter',
+                    mode: 'lines'
                   };
+                  data.push(trace);
+                  xArray = [];
+                  yArray = [];
+                  temp += 1;
                 }
-                else {
-                  trace = {
-                    x: xArray,
-                    y: yArray,
-                    xaxis: 'x' + temp,
-                    yaxis: 'y' + temp,
-                    name: plotTitles[temp - 1],
-                    fill: 'tonexty',
-                    type: 'scatter'
-                  };
+                var layout = {
+                  grid: { rows: data.length, columns: 1, pattern: 'independent' },
+                };
+                Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+                break;
+              case "discrete":
+                console.log("Not yet implemented");
+                break;
+              case "enclosure":
+                var plotTitles = [];
+                for (i = 1; i < obj.length; i++) {
+                  plotTitles.push(obj[i].title);
+                  for (var j in obj[i].data) {
+                    plotCharts.push(new Array());
+                    for (var k in obj[i].data[j]) {
+                      plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j][k].x, y: obj[i].data[j][k].y });
+                    }
+                  }
                 }
-                data.push(trace);
-                xArray = [];
-                yArray = [];
-              }
-              var layout = {
-                grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
-              };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
-              break;
+                console.log(plotCharts[3].length);
+                var xArray = [];
+                var yArray = [];
+                var data = [];
+                var temp = 1;                            // FIXME Possible bug in Plot.ly!
+                for (var i in plotCharts) {
+                  for (var j in plotCharts[i]) {
+                    xArray.push(plotCharts[i][j].x);
+                    yArray.push(plotCharts[i][j].y);
+                  }
+                  var trace = {};
+                  if (i % 2 == 0) {                      // FIXME check input
+                    if (i >= 1) temp += 1;
+                    trace = {
+                      x: xArray,
+                      y: yArray,
+                      xaxis: 'x' + temp,
+                      yaxis: 'y' + temp,
+                      name: plotTitles[temp - 1],
+                      type: 'scatter',
+                    };
+                  }
+                  else {
+                    trace = {
+                      x: xArray,
+                      y: yArray,
+                      xaxis: 'x' + temp,
+                      yaxis: 'y' + temp,
+                      name: plotTitles[temp - 1],
+                      fill: 'tonexty',
+                      type: 'scatter'
+                    };
+                  }
+                  data.push(trace);
+                  xArray = [];
+                  yArray = [];
+                }
+                var layout = {
+                  grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
+                };
+                Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+                break;
+            }
+          }
+          catch {
+            document.getElementById('plotTabError').style.display = "block";
           }
         }
       }
@@ -365,6 +401,12 @@ function  handleMessage(messageData) {
 
 /** Action when user closes the browser window */
 window.onbeforeunload = function () {
+  req.open('POST', url, true);
+  req.setRequestHeader("Csrf-Token", CsrfToken);
+  req.send("[" + JSON.stringify(exitAction) + "]\r");
+  req.onload = function (e) {
+    clearInterval(gettingAcumenAnswers);
+  }
   if (editedSinceLastSave) return "You have unsaved data. Please check before closing the window.";
 }
 
@@ -451,71 +493,7 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
-  document.getElementById("launchToggle").onclick = function() {
-    document.getElementById("loader").style.display = "flex";
-
-    if (this.checked){
-      req.open('POST', host + '/api/init', true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send();
-      req.onload = function(e) {
-        console.log(this.responseText);
-        gettingAcumenAnswers = setInterval(() => {
-          req.open('GET', host  + '/api/buffer', true);
-          req.setRequestHeader("Csrf-Token", CsrfToken);
-          req.send();
-          req.onload = function(event) {
-            var msg = this.responseText.substring(1, this.responseText.length-1);
-
-            if (isFrame == true) {
-              if (msg.substring(msg.length - 5) === '[END]') {
-                framedString += msg.substring(0, msg.length - 5);
-                framedString = framedString.replace(/\\\\\\\"/g, "@quote@");
-                framedString = framedString.replace(/\\"/g, '"');
-                framedString = framedString.replace(/\\n/g, '\n');
-                //console.log('final message F: ', framedString)
-                handleMessage(framedString);
-                framedString = '';
-                isFrame = false;
-              }
-              else {
-                framedString += msg;
-              }
-            }else{
-              if (msg == 'Buffer is empty'){}
-              else if (msg.substring(0, 10) === '[PROGRESS]') {
-                msg = msg.replace(/\\"/g, '"');
-                msg = msg.replace(/\\n/g, '\n');
-                var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
-                var n = msg.match(regex);
-                var m = regex.exec(n);
-                //console.log('final message P: ', m[1])
-                handleMessage(m[1]);
-              }
-              else if (msg.substring(0, 7) === '[FRAME]'){
-                framedString = msg.substring(7);
-                isFrame = true;
-              }
-              else {
-                //console.log('final message #: ', msg)
-                msg = msg.replace(/\\\\\\"/g, "@quote@");
-                msg = msg.replace(/\\"/g, '"');
-                msg = msg.replace(/\\\\n/g, '\\n');
-                handleMessage(msg);
-              }
-            }
-          };
-        }, 333);
-      };
-    }
-    else{
-      clearInterval(gettingAcumenAnswers);
-      req.open('POST', url, true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send("[" + JSON.stringify(exitAction) + "]\r");
-    }
-    
-  }
+  document.getElementById("loader").style.display = "flex";
   populateFontMenu();
   populateThemeMenu();
   document.getElementById("newAction").onclick = function () {
@@ -790,6 +768,7 @@ window.onload = function () {
     });
   };
   document.getElementById("plotButton").onclick = function () {
+    document.getElementById('plotTabError').style.display = "none";
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(plotButton) + "]\r");
@@ -799,6 +778,7 @@ window.onload = function () {
     changeRTab('plotTab', event);
   };
   document.getElementById("traceButton").onclick = function () {
+    document.getElementById('traceTabError').style.display = "none";
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(traceButton) + "]\r");
@@ -808,6 +788,7 @@ window.onload = function () {
     changeRTab('traceTab', event);
   };
   document.getElementById("threeDButton").onclick = function () {
+    document.getElementById('threeDTabError').style.display = "none";
     req.open('POST', url, true);
     req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(threeDButton) + "]\r");
@@ -888,6 +869,60 @@ window.onload = function () {
   };
 
   InitializeBabylonJSScene();
+
+  // After loading all elements, we launch Acumen
+  req.open('POST', host + '/api/init', true);
+  req.setRequestHeader("Csrf-Token", CsrfToken);
+  req.send();
+  req.onload = function(e) {
+    console.log(this.responseText);
+    gettingAcumenAnswers = setInterval(() => {
+      req.open('GET', host  + '/api/buffer', true);
+      req.setRequestHeader("Csrf-Token", CsrfToken);
+      req.send();
+      req.onload = function(event) {
+        var msg = this.responseText.substring(1, this.responseText.length-1);
+
+        if (isFrame == true) {
+          if (msg.substring(msg.length - 5) === '[END]') {
+            framedString += msg.substring(0, msg.length - 5);
+            framedString = framedString.replace(/\\\\\\\"/g, "@quote@");
+            framedString = framedString.replace(/\\"/g, '"');
+            framedString = framedString.replace(/\\n/g, '\n');
+            //console.log('final message F: ', framedString)
+            handleMessage(framedString);
+            framedString = '';
+            isFrame = false;
+          }
+          else {
+            framedString += msg;
+          }
+        }else{
+          if (msg == 'Buffer is empty'){}
+          else if (msg.substring(0, 10) === '[PROGRESS]') {
+            msg = msg.replace(/\\"/g, '"');
+            msg = msg.replace(/\\n/g, '\n');
+            var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
+            var n = msg.match(regex);
+            var m = regex.exec(n);
+            //console.log('final message P: ', m[1])
+            handleMessage(m[1]);
+          }
+          else if (msg.substring(0, 7) === '[FRAME]'){
+            framedString = msg.substring(7);
+            isFrame = true;
+          }
+          else {
+            //console.log('final message #: ', msg)
+            msg = msg.replace(/\\\\\\"/g, "@quote@");
+            msg = msg.replace(/\\"/g, '"');
+            msg = msg.replace(/\\\\n/g, '\\n');
+            handleMessage(msg);
+          }
+        }
+      };
+    }, 333);
+  };
 }
 
 /** =================================  START BABYLONJS CANVAS  ======================================== */
@@ -1428,17 +1463,19 @@ document.getElementById("showAxis").onclick = function() {
 
 /** Helper Functions */
 function populateFontMenu() {
-  let fonts = ["Monaco", "Menlo", "Ubuntu Mono", "Monospace"];
+  let fonts = ["Monospaced", "Consolas", "Courier New", "Lucida Console"];
   menuNode = document.getElementById("fontMenu");
   editorNode = document.getElementById("editor");
-  for (i in fonts) {
+  for (let i = 0; i < fonts.length; i++) {
     let node = document.createElement("li");
     let label = document.createElement("label");
     let input = document.createElement("input");
     let text = document.createTextNode(fonts[i]);
     input.setAttribute('type', "radio");
     input.setAttribute('name', 'font');
-    input.onclick = function () { editorNode.style.fontFamily = fonts[i]; }
+    input.onclick = function () { 
+      console.log("set theme : " + fonts[i]);
+      editorNode.style.fontFamily = fonts[i]; }
     if (i == 0) { input.checked = true; }
     label.appendChild(input);
     label.appendChild(text);
@@ -1448,9 +1485,9 @@ function populateFontMenu() {
 }
 
 function populateThemeMenu() {
-  let themes = ["dreamweaver", "textMate", "ambiance", "dracula"];
+  let themes = ["dreamweaver", "textmate", "ambiance", "dracula"];
   menuNode = document.getElementById("themeMenu");
-  for (i in themes) {
+  for (let i = 0; i < themes.length; i++) {
     let node = document.createElement("li");
     let label = document.createElement("label");
     let input = document.createElement("input");
