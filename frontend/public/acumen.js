@@ -10,65 +10,75 @@ var engine = null;
 function  handleMessage(messageData) {
   try {
     var obj = JSON.parse(messageData);
-    if (!Array.isArray(obj)) {
-      switch (obj.event) {
-        case "firstRes":
-          try {
-            console.log("send jsReady");
-            req.open('POST', url, true);
-            req.setRequestHeader("Csrf-Token", CsrfToken);
-            req.send("[" + JSON.stringify(jsReady) + "]\r");
-            req.onload = function(e) {
-              console.log(this.responseText);
-            };
+  }
+  catch(error) {
+    console.log('Failed to parse JSON data.\n Error: ' + error);
+  }
+  if (!Array.isArray(obj)) {
+    switch (obj.event) {
+      case "firstRes":
+        try {
+          console.log("send jsReady");
+          req.open('POST', url, true);
+          req.setRequestHeader("Csrf-Token", CsrfToken);
+          req.send("[" + JSON.stringify(jsReady) + "]\r");
+          req.onload = function(e) {
+            console.log(this.responseText);
+          };
+        }
+        catch(error) {
+          console.log('An error occured during initialisation, please reboot server. \n Error: ' + error)
+        }
+        break;
+      case "longMessage":
+        console.log("the data has been splitted into " + obj.size + " chunks");
+        break;
+      case "state":
+        if (obj.state === "appReady") {
+          editor.setOptions({
+              readOnly: false
+          })
+          document.getElementById("undoAction").disabled = true;   // Hack to disable button cause of init code.
+          var loader = document.getElementById("loader");
+          setTimeout(function () {
+            loader.style.display = 'none';
+          }, 1000);
+          loader.style.WebkitTransition = 'opacity 1s';
+          loader.style.opacity = '0';
+        }
+        else if (obj.state === "appExit"){
+          document.getElementById("loader").style.display = "none";
+        }
+        else {
+          stateChanged(obj.state);
+        }
+        break;
+      case "enableNormalize":
+        document.getElementById("normalization").checked = true;
+        break;
+      case "viewChange":
+        switch (obj.selectView) {
+          case "plotView":
+            changeRTab('plotTab');
+            document.getElementById("plotButton").className += " active";
             break;
-          }
-          catch {
-            console.log('An error occured during initialisation, please reboot server.')
-          }
-        case "longMessage":
-          console.log("the data has been splitted into " + obj.size + " chunks");
-          break;
-        case "state":
-          if (obj.state === "appReady") {
-            editor.setOptions({
-                readOnly: false
-            })
-            document.getElementById("undoAction").disabled = true;   // Hack to disable button cause of init code.
-            var loader = document.getElementById("loader");
-            setTimeout(function () {
-              loader.style.display = 'none';
-            }, 1000);
-            loader.style.WebkitTransition = 'opacity 1s';
-            loader.style.opacity = '0';
-          }
-          else if (obj.state === "appExit"){
-            document.getElementById("loader").style.display = "none";
-          }
-          else {
-            stateChanged(obj.state);
-          }
-          break;
-        case "enableNormalize":
-          document.getElementById("normalization").checked = true;
-          break;
-        case "viewChange":
-          switch (obj.selectView) {
-            case "plotView":
-              changeRTab('plotTab');
-              document.getElementById("plotButton").className += " active";
-              break;
-            case "threedView":
-              changeRTab('threeDtab');
-              document.getElementById("threeDButton").className += " active";
-              break;
-          }
-          break;
-        case "codeArea":
+          case "threedView":
+            changeRTab('threeDtab');
+            document.getElementById("threeDButton").className += " active";
+            break;
+        }
+        break;
+      case "codeArea":
+        try {
           editor.setValue(obj.text.replace(/@quote@/g, '"'), 1);
           editedSinceLastSave = false;
-          break;
-        case "console":
+        }
+        catch(error) {
+          console.log('An error occured while loading text on the editor, please try again.\n Error: ' + error);
+        }
+        break;
+      case "console":
+        try {
           if (obj.data[0] === 'separator') {
             var toggler = document.getElementsByClassName("consoleItem");
             for (var i = 0; i < toggler.length; i++) {
@@ -110,292 +120,296 @@ function  handleMessage(messageData) {
             node.appendChild(par);
             document.getElementById("consoleAreaList").appendChild(node);
           }
-          break;
-        case "progress":
+        }
+        catch(error) {
+          console.log('Failed to load console message.\n Error: ' + error);
+        }
+        break;
+      case "progress":
+        try {
           document.getElementById("progressBar").value = obj.data;
-          break;
-        case "setFilename":
-          document.getElementById("fileNameLabelText").innerHTML = obj.data;
-          break;
-        case "serverStarted":
-          document.getElementById("startServer").disabled = true;
-          document.getElementById("stopServer").disabled = false;
-          document.getElementById("resetDevice").disabled = false;
-          document.getElementById("serverLink").disabled = false;
-          document.getElementById("serverLink").innerText = 'Open server link: ' + obj.link;
-          document.getElementById("serverLink").onclick = function () { window.open("http://" + obj.link); };
-          break;
-        case "serverStopped":
-          document.getElementById("startServer").disabled = false;
-          document.getElementById("stopServer").disabled = true;
-          document.getElementById("resetDevice").disabled = true;
-          document.getElementById("serverLink").disabled = true;
-          document.getElementById("serverLink").innerText = 'Server Link';
-          break;
-      }
+        }
+        catch(error) {
+          console.log('Failed to update progress bar.\n Error: ' + error);
+        }
+        break;
+      case "setFilename":
+        document.getElementById("fileNameLabelText").innerHTML = obj.data;
+        break;
+      case "serverStarted":
+        document.getElementById("startServer").disabled = true;
+        document.getElementById("stopServer").disabled = false;
+        document.getElementById("resetDevice").disabled = false;
+        document.getElementById("serverLink").disabled = false;
+        document.getElementById("serverLink").innerText = 'Open server link: ' + obj.link;
+        document.getElementById("serverLink").onclick = function () { window.open("http://" + obj.link); };
+        break;
+      case "serverStopped":
+        document.getElementById("startServer").disabled = false;
+        document.getElementById("stopServer").disabled = true;
+        document.getElementById("resetDevice").disabled = true;
+        document.getElementById("serverLink").disabled = true;
+        document.getElementById("serverLink").innerText = 'Server Link';
+        break;
     }
-    else {
-      if (obj[0].hasOwnProperty('action')) {
-        if (obj[0].action === 'filetree') {
-          try {
-            document.getElementById('browserError').style.display = "none";
-            console.log(sortByKey(obj[1]));
-            showBrowser(sortByKey(obj[1]));
-          }
-          catch {
-            document.getElementById('browserError').style.display = "block";
-          }
-          if (!document.getElementById('browserAreaList').hasChildNodes()) {
-            document.getElementById('browserError').style.display = "block";
-          }
+  }
+  else {
+    if (obj[0].hasOwnProperty('action')) {
+      if (obj[0].action === 'filetree') {
+        try {
+          document.getElementById('browserError').style.display = "none";
+          console.log(obj[1]);
+          console.log(sortByKey(obj[1]));
+          showBrowser(sortByKey(obj[1]));
         }
-        else if (obj[0].action === 'threedAllFrames') {
-          // TODO This is the json object containing all the frames.
-          try {
-            document.getElementById('threeDTabError').style.display = "none";
-            let complete3Dframes = obj;
-            load3Ddataset(obj);
-            console.log(obj)
-            /** ---------- How to enable the 3D Tab ----------
-             * In order for the 3DTab to work you need to follow these steps:
-             * - Enable the canvas in acumen.html file
-             * - Import both the babylon library and your custom babylon js file
-             * - Send from this js file to babylon's through a method. For example: load3Ddataset(obj);
-             *
-             * ---------- How the dataset is constructed ----------
-             * Each frame contains the objects, which are represented as followed:
-             * 1. type:
-             *    - newObj   (for new objects)
-             *    - tranform (for transformations of existing objects)
-             * 2. data:
-             *    - id
-             *    - name
-             *    - path
-             *    - angle
-             *    - position
-             *    - color
-             *    - coordinates
-             *    - position
-             *    - size
-             *    - text
-             *    - transparency
-             *    - height
-             *
-             * The last object of the json file is the camera options, which are represented as followed:
-             * 1. type: "camera"
-             * 2. position
-             * 3. lookAtPosition
-            */
-          }
-          catch {
-            document.getElementById('traceTabError').style.display = "block";
-          }
+        catch {
+          document.getElementById('browserError').style.display = "block";
         }
-        else if (obj[0].action === 'populateSemantics') {
-          for (i = 1; i < obj.length; i++) {
-            var group;
-            if (obj[i].hasOwnProperty('traditional')) { group = document.getElementById("traditionalSemantics"); }
-            else if (obj[i].hasOwnProperty('enclosure')) { group = document.getElementById("enclosureSemantics"); }
-            else { group = document.getElementById("deprecatedSemantics"); }
-            for (var j in obj[i]) {
-              for (var k in obj[i][j]) {
-                if (obj[i][j][k].id !== "separator") {
-                  let listItem = document.createElement("li");
-                  let label = document.createElement("label");
-                  let input = document.createElement("input");
-                  input.setAttribute('type', "radio");
-                  input.setAttribute('name', 'semantics');
-                  let tempID = obj[i][j][k].id;
-                  let isEnclosure = obj[i][j][k].isEnclosure;
-                  input.onclick = function () {
-                    req.open('POST', url, true);
-                    req.setRequestHeader("Csrf-Token", CsrfToken);
-                    req.send("[" + JSON.stringify(setSemantics(tempID)) + "]\r");
-                    req.onload = function(e) {
-                      console.log(this.responseText);
-                    };
-                    if (isEnclosure) { toggleContraction(true); }
-                    else { toggleContraction(false); }
-                  }
-                  if (obj[i][j][k].selected) input.checked = true;
-                  let textnode = document.createTextNode(obj[i][j][k].name);
-                  label.appendChild(input);
-                  label.appendChild(textnode);
-                  listItem.appendChild(label);
-                  group.appendChild(listItem);
-                  enabledWhenStopped.push(input);
-                  enabledWhenStopped.push(label);
-                }
-                else {
-                  group.appendChild(document.createElement("hr"));
-                }
-              }
-              if (obj[i].hasOwnProperty('enclosure')) {
-                let contrLabel = document.createElement("label");
-                let contrInput = document.createElement("input");
-                contrInput.setAttribute('type', "checkbox");
-                contrInput.setAttribute('id', 'contraction');
-                contrInput.disabled = true;
-                contrInput.onclick = function () {
-                  if (this.checked == true) { contractionAction.value = 'true'; }
-                  else { contractionAction.value = 'false'; }
+        if (!document.getElementById('browserAreaList').hasChildNodes()) {
+          document.getElementById('browserError').style.display = "block";
+        }
+      }
+      else if (obj[0].action === 'threedAllFrames') {
+        // TODO This is the json object containing all the frames.
+        try {
+          document.getElementById('threeDTabError').style.display = "none";
+          let complete3Dframes = obj;
+          load3Ddataset(obj);
+          console.log(obj)
+          /** ---------- How to enable the 3D Tab ----------
+           * In order for the 3DTab to work you need to follow these steps:
+           * - Enable the canvas in acumen.html file
+           * - Import both the babylon library and your custom babylon js file
+           * - Send from this js file to babylon's through a method. For example: load3Ddataset(obj);
+           *
+           * ---------- How the dataset is constructed ----------
+           * Each frame contains the objects, which are represented as followed:
+           * 1. type:
+           *    - newObj   (for new objects)
+           *    - tranform (for transformations of existing objects)
+           * 2. data:
+           *    - id
+           *    - name
+           *    - path
+           *    - angle
+           *    - position
+           *    - color
+           *    - coordinates
+           *    - position
+           *    - size
+           *    - text
+           *    - transparency
+           *    - height
+           *
+           * The last object of the json file is the camera options, which are represented as followed:
+           * 1. type: "camera"
+           * 2. position
+           * 3. lookAtPosition
+          */
+        }
+        catch {
+          document.getElementById('traceTabError').style.display = "block";
+        }
+      }
+      else if (obj[0].action === 'populateSemantics') {
+        for (i = 1; i < obj.length; i++) {
+          var group;
+          if (obj[i].hasOwnProperty('traditional')) { group = document.getElementById("traditionalSemantics"); }
+          else if (obj[i].hasOwnProperty('enclosure')) { group = document.getElementById("enclosureSemantics"); }
+          else { group = document.getElementById("deprecatedSemantics"); }
+          for (var j in obj[i]) {
+            for (var k in obj[i][j]) {
+              if (obj[i][j][k].id !== "separator") {
+                let listItem = document.createElement("li");
+                let label = document.createElement("label");
+                let input = document.createElement("input");
+                input.setAttribute('type', "radio");
+                input.setAttribute('name', 'semantics');
+                let tempID = obj[i][j][k].id;
+                let isEnclosure = obj[i][j][k].isEnclosure;
+                input.onclick = function () {
                   req.open('POST', url, true);
                   req.setRequestHeader("Csrf-Token", CsrfToken);
-                  req.send("[" + JSON.stringify(contractionAction) + "]\r");
+                  req.send("[" + JSON.stringify(setSemantics(tempID)) + "]\r");
                   req.onload = function(e) {
                     console.log(this.responseText);
                   };
-                };
-                let contrSpan = document.createElement("span");
-                contrSpan.innerHTML = 'Contraction';
-                contrLabel.appendChild(contrInput);
-                contrLabel.appendChild(contrSpan);
-                group.appendChild(document.createElement("hr"));
-                group.appendChild(contrLabel);
-                enabledWhenStopped.push(contrLabel);
+                  if (isEnclosure) { toggleContraction(true); }
+                  else { toggleContraction(false); }
+                }
+                if (obj[i][j][k].selected) input.checked = true;
+                let textnode = document.createTextNode(obj[i][j][k].name);
+                label.appendChild(input);
+                label.appendChild(textnode);
+                listItem.appendChild(label);
+                group.appendChild(listItem);
+                enabledWhenStopped.push(input);
+                enabledWhenStopped.push(label);
               }
+              else {
+                group.appendChild(document.createElement("hr"));
+              }
+            }
+            if (obj[i].hasOwnProperty('enclosure')) {
+              let contrLabel = document.createElement("label");
+              let contrInput = document.createElement("input");
+              contrInput.setAttribute('type', "checkbox");
+              contrInput.setAttribute('id', 'contraction');
+              contrInput.disabled = true;
+              contrInput.onclick = function () {
+                if (this.checked == true) { contractionAction.value = 'true'; }
+                else { contractionAction.value = 'false'; }
+                req.open('POST', url, true);
+                req.setRequestHeader("Csrf-Token", CsrfToken);
+                req.send("[" + JSON.stringify(contractionAction) + "]\r");
+                req.onload = function(e) {
+                  console.log(this.responseText);
+                };
+              };
+              let contrSpan = document.createElement("span");
+              contrSpan.innerHTML = 'Contraction';
+              contrLabel.appendChild(contrInput);
+              contrLabel.appendChild(contrSpan);
+              group.appendChild(document.createElement("hr"));
+              group.appendChild(contrLabel);
+              enabledWhenStopped.push(contrLabel);
             }
           }
         }
       }
-      else if (obj[0].hasOwnProperty('event')) {
-        if (obj[0].event === "traceTable") {
-          try {
-            document.getElementById('traceTabError').style.display = "none";
-            var table = document.getElementById("traceTable");
-            while (table.hasChildNodes()) {
-              table.removeChild(table.firstChild);
-            }
-            for (i = 0; i < obj[1].length; i++) {
-              var rowNode = document.createElement("TR");
-              for (var j in obj[1][i]) {
-                var columnNode;
-                if (i == 0) columnNode = document.createElement("TH");
-                else columnNode = document.createElement("TD");
-                var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
-                columnNode.appendChild(textnode);
-                rowNode.appendChild(columnNode);
-              }
-              table.appendChild(rowNode);
-            }
+    }
+    else if (obj[0].hasOwnProperty('event')) {
+      if (obj[0].event === "traceTable") {
+        try {
+          document.getElementById('traceTabError').style.display = "none";
+          var table = document.getElementById("traceTable");
+          while (table.hasChildNodes()) {
+            table.removeChild(table.firstChild);
           }
-          catch {
-            var table = document.getElementById("traceTable");
-            while (table.hasChildNodes()) {
-              table.removeChild(table.firstChild);
+          for (i = 0; i < obj[1].length; i++) {
+            var rowNode = document.createElement("TR");
+            for (var j in obj[1][i]) {
+              var columnNode;
+              if (i == 0) columnNode = document.createElement("TH");
+              else columnNode = document.createElement("TD");
+              var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
+              columnNode.appendChild(textnode);
+              rowNode.appendChild(columnNode);
             }
-            document.getElementById('traceTabError').style.display = "block";
+            table.appendChild(rowNode);
           }
         }
-        else if (obj[0].event === "plotter") {
-          try {
-            document.getElementById('plotTabError').style.display = "none";
-            var plotCharts = new Array();
-            switch (obj[0].type) {
-              case "doubles":
-                for (i = 1; i < obj.length; i++) {
+        catch {
+          var table = document.getElementById("traceTable");
+          while (table.hasChildNodes()) {
+            table.removeChild(table.firstChild);
+          }
+          document.getElementById('traceTabError').style.display = "block";
+        }
+      }
+      else if (obj[0].event === "plotter") {
+        try {
+          document.getElementById('plotTabError').style.display = "none";
+          var plotCharts = new Array();
+          switch (obj[0].type) {
+            case "doubles":
+              for (i = 1; i < obj.length; i++) {
+                plotCharts.push(new Array());
+                for (var j in obj[i].data) {
+                  plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j].x, y: obj[i].data[j].y });
+                }
+              }
+              var xArray = [];
+              var yArray = [];
+              var data = [];
+              var temp = 1;                            //FIXME Possible bug in Plot.ly!
+              for (var i in plotCharts) {
+                for (var j in plotCharts[i]) {
+                  xArray.push(plotCharts[i][j].x);
+                  yArray.push(plotCharts[i][j].y);
+                }
+                var trace = {
+                  x: xArray,
+                  y: yArray,
+                  xaxis: 'x' + temp,
+                  yaxis: 'y' + temp,
+                  name: obj[temp].title,
+                  type: 'scatter',
+                  mode: 'lines'
+                };
+                data.push(trace);
+                xArray = [];
+                yArray = [];
+                temp += 1;
+              }
+              var layout = {
+                grid: { rows: data.length, columns: 1, pattern: 'independent' },
+              };
+              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+              break;
+            case "discrete":
+              console.log("Not yet implemented");
+              break;
+            case "enclosure":
+              var plotTitles = [];
+              for (i = 1; i < obj.length; i++) {
+                plotTitles.push(obj[i].title);
+                for (var j in obj[i].data) {
                   plotCharts.push(new Array());
-                  for (var j in obj[i].data) {
-                    plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j].x, y: obj[i].data[j].y });
+                  for (var k in obj[i].data[j]) {
+                    plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j][k].x, y: obj[i].data[j][k].y });
                   }
                 }
-                var xArray = [];
-                var yArray = [];
-                var data = [];
-                var temp = 1;                            //FIXME Possible bug in Plot.ly!
-                for (var i in plotCharts) {
-                  for (var j in plotCharts[i]) {
-                    xArray.push(plotCharts[i][j].x);
-                    yArray.push(plotCharts[i][j].y);
-                  }
-                  var trace = {
+              }
+              console.log(plotCharts[3].length);
+              var xArray = [];
+              var yArray = [];
+              var data = [];
+              var temp = 1;                            // FIXME Possible bug in Plot.ly!
+              for (var i in plotCharts) {
+                for (var j in plotCharts[i]) {
+                  xArray.push(plotCharts[i][j].x);
+                  yArray.push(plotCharts[i][j].y);
+                }
+                var trace = {};
+                if (i % 2 == 0) {                      // FIXME check input
+                  if (i >= 1) temp += 1;
+                  trace = {
                     x: xArray,
                     y: yArray,
                     xaxis: 'x' + temp,
                     yaxis: 'y' + temp,
-                    name: obj[temp].title,
+                    name: plotTitles[temp - 1],
                     type: 'scatter',
-                    mode: 'lines'
                   };
-                  data.push(trace);
-                  xArray = [];
-                  yArray = [];
-                  temp += 1;
                 }
-                var layout = {
-                  grid: { rows: data.length, columns: 1, pattern: 'independent' },
-                };
-                Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
-                break;
-              case "discrete":
-                console.log("Not yet implemented");
-                break;
-              case "enclosure":
-                var plotTitles = [];
-                for (i = 1; i < obj.length; i++) {
-                  plotTitles.push(obj[i].title);
-                  for (var j in obj[i].data) {
-                    plotCharts.push(new Array());
-                    for (var k in obj[i].data[j]) {
-                      plotCharts[plotCharts.length - 1].push({ x: obj[i].data[j][k].x, y: obj[i].data[j][k].y });
-                    }
-                  }
+                else {
+                  trace = {
+                    x: xArray,
+                    y: yArray,
+                    xaxis: 'x' + temp,
+                    yaxis: 'y' + temp,
+                    name: plotTitles[temp - 1],
+                    fill: 'tonexty',
+                    type: 'scatter'
+                  };
                 }
-                console.log(plotCharts[3].length);
-                var xArray = [];
-                var yArray = [];
-                var data = [];
-                var temp = 1;                            // FIXME Possible bug in Plot.ly!
-                for (var i in plotCharts) {
-                  for (var j in plotCharts[i]) {
-                    xArray.push(plotCharts[i][j].x);
-                    yArray.push(plotCharts[i][j].y);
-                  }
-                  var trace = {};
-                  if (i % 2 == 0) {                      // FIXME check input
-                    if (i >= 1) temp += 1;
-                    trace = {
-                      x: xArray,
-                      y: yArray,
-                      xaxis: 'x' + temp,
-                      yaxis: 'y' + temp,
-                      name: plotTitles[temp - 1],
-                      type: 'scatter',
-                    };
-                  }
-                  else {
-                    trace = {
-                      x: xArray,
-                      y: yArray,
-                      xaxis: 'x' + temp,
-                      yaxis: 'y' + temp,
-                      name: plotTitles[temp - 1],
-                      fill: 'tonexty',
-                      type: 'scatter'
-                    };
-                  }
-                  data.push(trace);
-                  xArray = [];
-                  yArray = [];
-                }
-                var layout = {
-                  grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
-                };
-                Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
-                break;
-            }
+                data.push(trace);
+                xArray = [];
+                yArray = [];
+              }
+              var layout = {
+                grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
+              };
+              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+              break;
           }
-          catch {
-            document.getElementById('plotTabError').style.display = "block";
-          }
+        }
+        catch {
+          document.getElementById('plotTabError').style.display = "block";
         }
       }
     }
-  }
-  catch (error) {
-    // FIXME Sometime when data are sent in a small period of time, sockets do not intercept different messages.
-    // var split = event.data.split(/\r/g);
-    console.error(error + "\nData was: " + messageData);
   }
 }
 
@@ -405,7 +419,7 @@ window.onbeforeunload = function () {
   req.setRequestHeader("Csrf-Token", CsrfToken);
   req.send("[" + JSON.stringify(exitAction) + "]\r");
   req.onload = function (e) {
-    clearInterval(gettingAcumenAnswers);
+    clearTimeout(gettingAcumenAnswers);
   }
   if (editedSinceLastSave) return "You have unsaved data. Please check before closing the window.";
 }
@@ -873,53 +887,8 @@ window.onload = function () {
   req.send();
   req.onload = function(e) {
     console.log(this.responseText);
-    gettingAcumenAnswers = setInterval(() => {
-      req.open('GET', host  + '/api/buffer', true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
-      req.send();
-      req.onload = function(event) {
-        var msg = this.responseText.substring(1, this.responseText.length-1);
-
-        if (isFrame == true) {
-          if (msg.substring(msg.length - 5) === '[END]') {
-            framedString += msg.substring(0, msg.length - 5);
-            framedString = framedString.replace(/\\\\\\\"/g, "@quote@");
-            framedString = framedString.replace(/\\"/g, '"');
-            framedString = framedString.replace(/\\n/g, '\n');
-            //console.log('final message F: ', framedString)
-            handleMessage(framedString);
-            framedString = '';
-            isFrame = false;
-          }
-          else {
-            framedString += msg;
-          }
-        }else{
-          if (msg == 'Buffer is empty'){}
-          else if (msg.substring(0, 10) === '[PROGRESS]') {
-            msg = msg.replace(/\\"/g, '"');
-            msg = msg.replace(/\\n/g, '\n');
-            var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
-            var n = msg.match(regex);
-            var m = regex.exec(n);
-            //console.log('final message P: ', m[1])
-            handleMessage(m[1]);
-          }
-          else if (msg.substring(0, 7) === '[FRAME]'){
-            framedString = msg.substring(7);
-            isFrame = true;
-          }
-          else {
-            //console.log('final message #: ', msg)
-            msg = msg.replace(/\\\\\\"/g, "@quote@");
-            msg = msg.replace(/\\"/g, '"');
-            msg = msg.replace(/\\\\n/g, '\\n');
-            handleMessage(msg);
-          }
-        }
-      };
-    }, 333);
-  };
+    loopBuffer();
+  }
 }
 
 /** =================================  START BABYLONJS CANVAS  ======================================== */
@@ -1507,6 +1476,56 @@ document.getElementById("showAxis").onclick = function() {
 /** =================================  END BABYLONJS CANVAS  ======================================== */
 
 /** Helper Functions */
+function loopBuffer() {
+  var start = window.performance.now();
+  req.open('GET', host  + '/api/buffer', true);
+  req.setRequestHeader("Csrf-Token", CsrfToken);
+  req.send();
+  req.onload = function(event) {
+    var msg = this.responseText.substring(1, this.responseText.length-1);
+
+    if (isFrame == true) {
+      if (msg.substring(msg.length - 5) === '[END]') {
+        framedString += msg.substring(0, msg.length - 5);
+        framedString = framedString.replace(/\\\\\\\"/g, "@quote@");
+        framedString = framedString.replace(/\\"/g, '"');
+        framedString = framedString.replace(/\\n/g, '\n');
+        //console.log('final message F: ', framedString)
+        handleMessage(framedString);
+        framedString = '';
+        isFrame = false;
+      }
+      else {
+        framedString += msg;
+      }
+    }else{
+      if (msg == 'Buffer is empty'){}
+      else if (msg.substring(0, 10) === '[PROGRESS]') {
+        msg = msg.replace(/\\"/g, '"');
+        msg = msg.replace(/\\n/g, '\n');
+        var regex = /\[PROGRESS\](.*?)\[\/PROGRESS\]/g;
+        var n = msg.match(regex);
+        var m = regex.exec(n);
+        //console.log('final message P: ', m[1])
+        handleMessage(m[1]);
+      }
+      else if (msg.substring(0, 7) === '[FRAME]'){
+        framedString = msg.substring(7);
+        isFrame = true;
+      }
+      else {
+        //console.log('final message #: ', msg)
+        msg = msg.replace(/\\\\\\"/g, "@quote@");
+        msg = msg.replace(/\\"/g, '"');
+        msg = msg.replace(/\\\\n/g, '\\n');
+        handleMessage(msg);
+      }
+    }
+  };
+  var stop = window.performance.now();
+  gettingAcumenAnswers = setTimeout(loopBuffer, Math.max(10, 333 - (stop - start)));
+}
+
 function populateFontMenu() {
   let fonts = ["Monospaced", "Consolas", "Courier New", "Lucida Console"];
   menuNode = document.getElementById("fontMenu");
@@ -1745,7 +1764,6 @@ function sortByKey(jsObj){
   var sortedArray = [];
   var keywords = ["children", "id", "name"];
 
-  // Push each JSON Object entry in array by [key, value]
   for(var i in jsObj)
   {
     if (keywords.find(elmt => elmt == i) != undefined){
@@ -1753,9 +1771,9 @@ function sortByKey(jsObj){
       if (i == 'children'){
         shuffledArray.sort((a, b) => {
           if (a.name != undefined && b.name != undefined){
-            a.name.localeCompare(b.name);
+            return a.name.localeCompare(b.name);
           } else {
-            a[2][1].localeCompare(b[2][1]);
+            return a[2][1].localeCompare(b[2][1]);
           }
         });
       }
@@ -1772,7 +1790,7 @@ function sortByKey(jsObj){
       }
     }
   })
-
+  
   return sortedArray.sort();
 }
 
