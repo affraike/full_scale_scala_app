@@ -545,11 +545,11 @@ class App extends SimpleSwingApplication {
     //timer3d.destroy=true
     //receiver.destroy=true
     //threeDView.exit
-
+    Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> "appExit")))
+    Thread.sleep(1000)
     controller ! Stop
     actor ! EXIT
     quit
-    Main.addBufferList(ujson.write(ujson.Obj("event" -> "state", "state" -> "appExit")))
   }
 
   def withErrorReporting(action: => Unit): Unit = {

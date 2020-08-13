@@ -270,7 +270,7 @@ object App {
       div(id := "leftPane",
         div(id := "upperPane",
           div(id := "fileNameLabel",
-            span(id := "fileNameLabelText","[Untitled]")
+            span(id := "fileNameLabelText","[Untitled]", contentEditable:= true, spellCheck:= false)
           ),
           div(id := "codePanel",
             div(id := "editor", fontSize:= "12px", fontFamily:="Consolas")

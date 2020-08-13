@@ -6,13 +6,15 @@ var gettingAcumenAnswers = null;
 var framedString = '';
 var isFrame = false;
 var engine = null;
+var obj = null;
 
 function  handleMessage(messageData) {
   try {
-    var obj = JSON.parse(messageData);
+    obj = JSON.parse(messageData);
   }
   catch(error) {
-    console.log('Failed to parse JSON data.\n Error: ' + error);
+    console.log('Failed to parse JSON data.\nError: ' + error + '\nData: ' + obj);
+    return;
   }
   if (!Array.isArray(obj)) {
     switch (obj.event) {
@@ -47,7 +49,7 @@ function  handleMessage(messageData) {
           loader.style.opacity = '0';
         }
         else if (obj.state === "appExit"){
-          document.getElementById("loader").style.display = "none";
+          console.log("Exiting the app");
         }
         else {
           stateChanged(obj.state);
@@ -414,13 +416,12 @@ function  handleMessage(messageData) {
 }
 
 /** Action when user closes the browser window */
-window.onbeforeunload = function () {
+window.onbeforeunload = async function () {
   req.open('POST', url, true);
   req.setRequestHeader("Csrf-Token", CsrfToken);
   req.send("[" + JSON.stringify(exitAction) + "]\r");
-  req.onload = function (e) {
-    clearTimeout(gettingAcumenAnswers);
-  }
+  await resetScene();
+  await clearTimeout(gettingAcumenAnswers);
   if (editedSinceLastSave) return "You have unsaved data. Please check before closing the window.";
 }
 
@@ -852,21 +853,20 @@ window.onload = function () {
   //Top view
   let xyBtn = document.getElementById('topViewIcon');
   xyBtn.onclick = function () {
-    camera.position = new BABYLON.Vector3(0, 0, 10);
-    camera.setTarget(new BABYLON.Vector3.Zero);
-
+    var target = camera.getTarget();
+    camera.setPosition(new BABYLON.Vector3(target.x.toFixed(2), parseFloat(target.y + 10).toFixed(2), parseFloat(target.z - 0.1).toFixed(2)));
   };
   //Right view
   let yzBtn = document.getElementById('rightViewIcon');
   yzBtn.onclick = function () {
-    camera.position = new BABYLON.Vector3(10, 0, 0);
-    camera.setTarget(new BABYLON.Vector3.Zero);
+    var target = camera.getTarget();
+    camera.setPosition(new BABYLON.Vector3(parseFloat(target.x + 10).toFixed(2), target.y.toFixed(2), target.z.toFixed(2)));
   };
   //Front view
   let xzBtn = document.getElementById('frontViewIcon');
   xzBtn.onclick = function () {
-    camera.position = new BABYLON.Vector3(0, 10, 0);
-    camera.setTarget(new BABYLON.Vector3.Zero);
+    var target = camera.getTarget();
+    camera.setPosition(new BABYLON.Vector3(target.x.toFixed(2), target.y.toFixed(2), parseFloat(target.z - 10).toFixed(2)));
   };
   //Faster Animation
   let faster = document.getElementById('fasterIcon');
@@ -980,19 +980,18 @@ function pauseAnimation() {
 function createCamera_Light() {
   camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 5, new BABYLON.Vector3(0, 0, 0), scene);
   // Default positions & rotation of the camera
-  camera.setPosition(new BABYLON.Vector3.Zero);
-  camera.setTarget(new BABYLON.Vector3.Zero);
+  camera.setPosition(new BABYLON.Vector3(0.00, 0.00, 0.00)); // Does not seem to have any effect
+  camera.setTarget(new BABYLON.Vector3(0.00, 0.00, 0.00)); // Does not seem to have any effect
   camera.lowerRadiusLimit = 1;
   camera.upperRadiusLimit = 100;
   camera.radius = 5;
   // This attaches the camera to the canvas
   camera.attachControl(canvas, true);
   //Light direction is directly down
-  light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -10, 0), scene);
+  var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 5, 0), scene);
   light.diffuse = new BABYLON.Color3.White();
   light.specular = new BABYLON.Color3(0, 0, 0);
-  light.groundColor = new BABYLON.Color3.White();
-  light.intensity = 1;
+  light.intensity = 0.5;
 }
 /** Refresh BabylonJs Engine */
 function engineReferesh() {
@@ -1008,7 +1007,11 @@ function engineReferesh() {
 function resetScene() {
   if (alldata != null) {
     obj3d.forEach(obj => {
+      if (obj.name == "Custom3D"){
+        obj[0].dispose();
+      } else {
       obj.dispose();
+      }
     });
     obj3d = [];
     alldata = null;
@@ -1060,6 +1063,7 @@ function renderFrames() {
   //camera is on last index of each frame. 
   //Get position from each frame but target from first frame only so that user can rotate camera as they wisj
   if (frame == 1 && alldata[frame][alldata[frame].length - 1].type == "camera") {
+    console.log(obj3d);
     defaultCameraPosition = new BABYLON.Vector3(-alldata[frame][indobj].position[1],
       alldata[frame][indobj].position[2], alldata[frame][indobj].position[0]);
     camera.setPosition(defaultCameraPosition);
@@ -1071,7 +1075,7 @@ function renderFrames() {
 
 }
 
-function createNewObject(data) {
+async function createNewObject(data) {
   switch (data.name) {
     case "Sphere":
       obj3d.push(BABYLON.MeshBuilder.CreateSphere(data.name, { diameterX: 1, diameterY: 1, diameterZ: 1 }, scene));
@@ -1089,24 +1093,28 @@ function createNewObject(data) {
       obj3d.push(BABYLON.MeshBuilder.CreatePlane("plane", {width: 5, size:5, tileSize:1}, scene));
       break;
     case "Text":
-      obj3d.push(make_textline(data.text, data.position[0], data.position[1], data.position[2], "center", data.color, 6, 0.2, true, 0.1));
+      obj3d.push(make_textline(data.text, data.position[0], data.position[1], data.position[2], "left", data.color, 3, 0.1, true, 0.05));
       break;
     case "OBJ":
       switch (data.path) {
         case "car" :
-          obj3d.push(loadCustomObj("car"));
+          var car = (await BABYLON.SceneLoader.ImportMeshAsync('', './_3D/car/','car.obj', scene)).meshes
+          obj3d.push(car);
+          obj3d[obj3d.length - 1].name = "Custom3D";
           break;
         case "motor" :
-          obj3d.push(loadCustomObj("motor"));
+          var motor = (await BABYLON.SceneLoader.ImportMeshAsync('', './_3D/motor/','motor.obj', scene)).meshes
+          obj3d.push(motor);
+          obj3d[obj3d.length - 1].name = "Custom3D";
           break;
         case "house" :
-          obj3d.push(loadCustomObj("house"));
+          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/house/','house.obj', scene, function (scene) {}));
           break;
         case "sensor" :
-          obj3d.push(loadCustomObj("sensor"));
+          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/sensor/','sensor.obj', scene, function (scene) {}));
           break;
         case "truck" :
-          obj3d.push(loadCustomObj("truck"));
+          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/truck/','truck.obj', scene, function (scene) {}));
           break;
       }
       break;
@@ -1115,16 +1123,10 @@ function createNewObject(data) {
   }
   obj3d[obj3d.length - 1].id = data.id;
   var mat = new BABYLON.StandardMaterial("wpMat", scene);
+  mat.specularColor = new BABYLON.Color3.Black();
   mat.emissiveColor = new BABYLON.Color3(data.color[0], data.color[1], data.color[2]);
   mat.alpha = data.transparency > 0 ? 0.7 : 1;
   obj3d[obj3d.length - 1].material = mat;
-}
-
-function loadCustomObj(path) {
-  var obj_path = "./_3D/" + path + "/";
-  var obj_name = path + ".obj";
-
-  return BABYLON.SceneLoader.Append(obj_path, obj_name, scene, function (scene) {});
 }
 
 function renderObject(data) {
@@ -1132,11 +1134,11 @@ function renderObject(data) {
   obj3d.forEach(obj => {
     if (data.id === obj.id) {
       //this animation belong to this object...
-      //position [x,y,z] replaced as [-y,z,x]. 
+      //BabylonJS coordiante system is different, we have to make transformations.
       var pos = new BABYLON.Vector3(parseFloat(data.position[0].toFixed(2)),
         parseFloat(data.position[2].toFixed(2)),
-        parseFloat(-data.position[1].toFixed(2)));
-      var rotation = new BABYLON.Vector3(parseFloat(data.angle[0].toFixed(2)),
+        parseFloat(data.position[1].toFixed(2)));
+      var rotation = new BABYLON.Vector3(parseFloat(-data.angle[0].toFixed(2)),
         parseFloat(-data.angle[2].toFixed(2)),
         parseFloat(data.angle[1].toFixed(2)));
 
@@ -1147,13 +1149,19 @@ function renderObject(data) {
       index = (index + 1) % data.size.length;
       var sizey = data.size[index].toFixed(2);
 
-      var scale = new BABYLON.Vector3(-sizex,
+      var scale = new BABYLON.Vector3(sizex,
         sizey,
         sizez);
-
-      obj.position = pos;
-      obj.scaling = scale;
-      obj.rotation = rotation;
+      
+      if (obj.name == "Custom3D"){
+        obj[0].position = pos;
+        obj[0].scaling = scale;
+        obj[0].rotation = rotation;
+      } else {
+        obj.position = pos;
+        obj.scaling = scale;
+        obj.rotation = rotation;
+      }
 
       obj.material.emissiveColor = new BABYLON.Color3(data.color[0], data.color[1], data.color[2]);
       obj.material.alpha = data.transparency > 0 ? 0.7 : 1;
@@ -1347,12 +1355,13 @@ function moveCamera() {
   var xvalue = document.getElementById("camX").value;
   var yvalue = document.getElementById("camY").value;
   var zvalue = document.getElementById("camZ").value;
-  var x = (xvalue == "") ? 0 : parseInt(xvalue);
-  var y = (yvalue == "") ? 0 : parseInt(yvalue);
-  var z = (zvalue == "") ? 0 : parseInt(zvalue);
+  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
 
   if (x != camera.position.x || y != camera.position.y || z != camera.position.z){
-    camera.position = new BABYLON.Vector3(x, y, z);
+    // we apply the transformation (see renderObject)
+    camera.setPosition(new BABYLON.Vector3(x, z, y));
   }
 }
 
@@ -1365,14 +1374,14 @@ function updateCameraTracking() {
     var xvalue = inputx.value;
     var yvalue = inputy.value;
     var zvalue = inputz.value;
-    var x = (xvalue == "") ? 0 : parseInt(xvalue);
-    var y = (yvalue == "") ? 0 : parseInt(yvalue);
-    var z = (zvalue == "") ? 0 : parseInt(zvalue);
+    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
 
-    if (x.toFixed(2) != camera.position.x.toFixed(2) || y.toFixed(2) != camera.position.y.toFixed(2) || z.toFixed(2) != camera.position.z.toFixed(2)){
+    if (x.toFixed(2) != camera.position.x.toFixed(2) || y.toFixed(2) != camera.position.z.toFixed(2) || z.toFixed(2) != camera.position.y.toFixed(2)){
       inputx.value = camera.position.x.toFixed(2);
-      inputy.value = camera.position.y.toFixed(2);
-      inputz.value = camera.position.z.toFixed(2);
+      inputy.value = camera.position.z.toFixed(2);
+      inputz.value = camera.position.y.toFixed(2);
     }
   }
 }
@@ -1385,11 +1394,11 @@ function moveTargetCamera() {
   var xvalue = document.getElementById("laX").value;
   var yvalue = document.getElementById("laY").value;
   var zvalue = document.getElementById("laZ").value;
-  var x = (xvalue == "") ? 0 : parseInt(xvalue);
-  var y = (yvalue == "") ? 0 : parseInt(yvalue);
-  var z = (zvalue == "") ? 0 : parseInt(zvalue);
-
-  camera.setTarget(new BABYLON.Vector3(x, y, z));
+  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
+  // we apply the transformation (see renderObject)
+  camera.setTarget(new BABYLON.Vector3(x, z, y));
 }
 
 function updateCameraTargetTracking() {
@@ -1401,15 +1410,15 @@ function updateCameraTargetTracking() {
     var xvalue = inputx.value;
     var yvalue = inputy.value;
     var zvalue = inputz.value;
-    var x = (xvalue == "") ? 0 : parseInt(xvalue);
-    var y = (yvalue == "") ? 0 : parseInt(yvalue);
-    var z = (zvalue == "") ? 0 : parseInt(zvalue);
+    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
     var target = camera.getTarget();
 
-    if (x.toFixed(2) != target.x.toFixed(2) || y.toFixed(2) != target.y.toFixed(2) || z.toFixed(2) != target.z.toFixed(2)){
+    if (x.toFixed(2) != target.x.toFixed(2) || y.toFixed(2) != target.z.toFixed(2) || z.toFixed(2) != target.y.toFixed(2)){
       inputx.value = target.x.toFixed(2);
-      inputy.value = target.y.toFixed(2);
-      inputz.value = target.z.toFixed(2);
+      inputy.value = target.z.toFixed(2);
+      inputz.value = target.y.toFixed(2);
     }
   }
 }
@@ -1429,28 +1438,28 @@ var showAxis = function(size) {
    };
 
   var axisX = BABYLON.Mesh.CreateLines("axisX", [ 
-    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0.05 * size, 0), 
-    new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, -0.05 * size, 0)
+    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0, 0.05 * size), 
+    new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0, -0.05 * size)
     ], scene);
-  axisX.color = new BABYLON.Color3(1, 0, 0);
-  var xChar = makeTextPlane("X", "red", size / 10);
-  xChar.position = new BABYLON.Vector3(0.9 * size, -0.05 * size, 0);
+  axisX.color = new BABYLON.Color3(0, 0, 1);
+  var xChar = makeTextPlane("X", "blue", size / 10);
+  xChar.position = new BABYLON.Vector3(0.9 * size, 0, -0.05 * size);
   xChar.parent = axisX;
-  var axisY = BABYLON.Mesh.CreateLines("axisY", [
-      new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0), 
-      new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( 0.05 * size, size * 0.95, 0)
-      ], scene);
-  axisY.color = new BABYLON.Color3(0, 1, 0);
-  var yChar = makeTextPlane("Y", "green", size / 10);
-  yChar.position = new BABYLON.Vector3(0, 0.9 * size, -0.05 * size);
+  var axisY = BABYLON.Mesh.CreateLines("axisZ", [
+    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0 , -0.05 * size, size * 0.95),
+    new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0, 0.05 * size, size * 0.95)
+    ], scene);
+  axisY.color = new BABYLON.Color3(1, 0, 0);
+  var yChar = makeTextPlane("Y", "red", size / 10);
+  yChar.position = new BABYLON.Vector3(0, 0.05 * size, 0.9 * size);
   yChar.parent = axisY;
-  var axisZ = BABYLON.Mesh.CreateLines("axisZ", [
-      new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0 , -0.05 * size, size * 0.95),
-      new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0, 0.05 * size, size * 0.95)
-      ], scene);
-  axisZ.color = new BABYLON.Color3(0, 0, 1);
-  var zChar = makeTextPlane("Z", "blue", size / 10);
-  zChar.position = new BABYLON.Vector3(0, 0.05 * size, 0.9 * size);
+  var axisZ = BABYLON.Mesh.CreateLines("axisY", [
+    new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0), 
+    new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( 0.05 * size, size * 0.95, 0)
+    ], scene);
+  axisZ.color = new BABYLON.Color3(0, 1, 0);
+  var zChar = makeTextPlane("Z", "green", size / 10);
+  zChar.position = new BABYLON.Vector3(0, 0.9 * size, -0.05 * size);
   zChar.parent = axisZ;
 
   obj3d.push(axisX);
@@ -1578,6 +1587,12 @@ function updateInput() {
   while (graphDiv.data != undefined && graphDiv.data.length>0){
     Plotly.deleteTraces(graphDiv, [0]);
   }
+  document.getElementById("showAxis").style.checked = false;
+  camera.position = defaultCameraPosition;
+  camera.setTarget(new BABYLON.Vector3(0, 0, 0));
+  timelineSlider.value = 0;
+  time.innerHTML = "Time: ";
+  //
   document.getElementById("undoAction").disabled = !editor.session.getUndoManager().hasUndo();
   document.getElementById("redoAction").disabled = !editor.session.getUndoManager().hasRedo();
   req.open('POST', url, true);

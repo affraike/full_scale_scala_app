@@ -1584,7 +1584,7 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
   // Load external object files
   def loadObj(path: String, size: Double): Object3D = {
     //read in the geometry information from the data file
-    val _3DFolderPath = (_3DBasePath + File.separator + path).split("\\.")(0)
+    val _3DFolderPath = (_3DBasePath + File.separator + path)
     val _3DFolder = new File(_3DFolderPath) // the folder of the objects' files
     // load all the texture files
     val objectFiles =
