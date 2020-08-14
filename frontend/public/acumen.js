@@ -7,13 +7,26 @@ var framedString = '';
 var isFrame = false;
 var engine = null;
 var obj = null;
+var load
 
 function  handleMessage(messageData) {
   try {
     obj = JSON.parse(messageData);
   }
   catch(error) {
-    console.log('Failed to parse JSON data.\nError: ' + error + '\nData: ' + obj);
+    var framedString = '';
+    var isFrame = false;
+    if (messageData.includes('threedAllFrames')){
+      document.getElementById('threeDTabError').style.display = "block";
+    } 
+    else if (messageData.includes('traceTable')) {
+      document.getElementById('traceTabError').style.display = "block";
+    }
+    else if (messageData.includes('plotter')) {
+      document.getElementById('plotTabError').style.display = "block";
+    }
+    console.log('Failed to parse JSON data.\nError: ' + error + '\nData: ' + messageData);
+
     return;
   }
   if (!Array.isArray(obj)) {
@@ -160,8 +173,6 @@ function  handleMessage(messageData) {
       if (obj[0].action === 'filetree') {
         try {
           document.getElementById('browserError').style.display = "none";
-          console.log(obj[1]);
-          console.log(sortByKey(obj[1]));
           showBrowser(sortByKey(obj[1]));
         }
         catch {
@@ -177,7 +188,6 @@ function  handleMessage(messageData) {
           document.getElementById('threeDTabError').style.display = "none";
           let complete3Dframes = obj;
           load3Ddataset(obj);
-          console.log(obj)
           /** ---------- How to enable the 3D Tab ----------
            * In order for the 3DTab to work you need to follow these steps:
            * - Enable the canvas in acumen.html file
@@ -210,7 +220,7 @@ function  handleMessage(messageData) {
           */
         }
         catch {
-          document.getElementById('traceTabError').style.display = "block";
+          document.getElementById('threeDTabError').style.display = "block";
         }
       }
       else if (obj[0].action === 'populateSemantics') {
@@ -765,6 +775,11 @@ window.onload = function () {
   };
   document.getElementById("browserButton").onclick = function () {
     changeCTab('browserTab', event);
+    if (!document.getElementById('browserAreaList').hasChildNodes()) {
+      document.getElementById('browserError').style.display = "block";
+    } else {
+      document.getElementById('browserError').style.display = "none";
+    }
   };
   document.getElementById("dragAndDropButton").onclick = function () {
     changeCTab('dropTab', event);
@@ -1063,7 +1078,6 @@ function renderFrames() {
   //camera is on last index of each frame. 
   //Get position from each frame but target from first frame only so that user can rotate camera as they wisj
   if (frame == 1 && alldata[frame][alldata[frame].length - 1].type == "camera") {
-    console.log(obj3d);
     defaultCameraPosition = new BABYLON.Vector3(-alldata[frame][indobj].position[1],
       alldata[frame][indobj].position[2], alldata[frame][indobj].position[0]);
     camera.setPosition(defaultCameraPosition);

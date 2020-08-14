@@ -756,7 +756,7 @@ class _3DDisplay(app: ThreeDView, slider: Slider3D, playSpeed: Double,
                  _3DTimeTag: mutable.Map[Int, Double], timeStep: Double)
                  extends Publisher with Actor {
   /* Default directory where all the OBJ files are */
-  private val _3DBasePath = Files._3DDir.getAbsolutePath
+  private val _3DBasePath = Files._3DDir.getPath
   private var currentFrame = 0
   protected[threeD] var staticFrame = false
   // the amount of frames
