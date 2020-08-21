@@ -47,7 +47,8 @@ background-color: #50fa7b;\
 border-color: #f8f8f2\
 }\
 .ace-dracula .ace_keyword {\
-color: #ff79c6\
+color: #ff79c6;\
+font-weight: 900;\
 }\
 .ace-dracula .ace_constant.ace_language {\
 color: #bd93f9\

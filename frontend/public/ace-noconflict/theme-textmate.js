@@ -27,6 +27,7 @@ color: rgb(191, 191, 191);\
 .ace-tm .ace_storage,\
 .ace-tm .ace_keyword {\
 color: blue;\
+font-weight: 900;\
 }\
 .ace-tm .ace_constant {\
 color: rgb(197, 6, 11);\

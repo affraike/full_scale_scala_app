@@ -25,6 +25,7 @@ color: rgb(191, 191, 191);\
 .ace-dreamweaver .ace_storage,\
 .ace-dreamweaver .ace_keyword {\
 color: blue;\
+font-weight: 900;\
 }\
 .ace-dreamweaver .ace_constant.ace_buildin {\
 color: rgb(88, 72, 246);\

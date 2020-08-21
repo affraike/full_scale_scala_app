@@ -89,6 +89,7 @@ color: #24C2C7;\
 }\
 .ace-ambiance .ace_keyword {\
 color: #cda869;\
+font-weight: 900;\
 }\
 .ace-ambiance .ace_keyword.ace_operator {\
 color: #fa8d6a;\

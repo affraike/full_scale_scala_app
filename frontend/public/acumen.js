@@ -357,7 +357,7 @@ function  handleMessage(messageData) {
               var layout = {
                 grid: { rows: data.length, columns: 1, pattern: 'independent' },
               };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {displayModeBar: true});
               break;
             case "discrete":
               console.log("Not yet implemented");
@@ -413,7 +413,7 @@ function  handleMessage(messageData) {
               var layout = {
                 grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
               };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {responsive: true});
+              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {displayModeBar: true});
               break;
           }
         }
@@ -1008,6 +1008,86 @@ function createCamera_Light() {
   light.specular = new BABYLON.Color3(0, 0, 0);
   light.intensity = 0.5;
 }
+
+// showing and setting camera position in real time
+document.getElementById("camX").onchange = moveCamera;
+document.getElementById("camY").onchange = moveCamera;
+document.getElementById("camZ").onchange = moveCamera;
+
+
+function moveCamera() {
+  var xvalue = document.getElementById("camX").value;
+  var yvalue = document.getElementById("camY").value;
+  var zvalue = document.getElementById("camZ").value;
+  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
+
+  if (x != camera.position.x || y != camera.position.y || z != camera.position.z){
+    // we apply the transformation (see renderObject)
+    camera.setPosition(new BABYLON.Vector3(x, z, y));
+  }
+}
+
+function updateCameraTracking() {
+  var inputx = document.getElementById("camX");
+  var inputy = document.getElementById("camY");
+  var inputz = document.getElementById("camZ");
+  
+  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
+    var xvalue = inputx.value;
+    var yvalue = inputy.value;
+    var zvalue = inputz.value;
+    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
+
+    if (x.toFixed(2) != camera.position.x.toFixed(2) || y.toFixed(2) != camera.position.z.toFixed(2) || z.toFixed(2) != camera.position.y.toFixed(2)){
+      inputx.value = camera.position.x.toFixed(2);
+      inputy.value = camera.position.z.toFixed(2);
+      inputz.value = camera.position.y.toFixed(2);
+    }
+  }
+}
+
+// showing and setting camera's target position in real time
+document.getElementById("laX").onchange = moveTargetCamera;
+document.getElementById("laY").onchange = moveTargetCamera;
+document.getElementById("laZ").onchange = moveTargetCamera;
+
+function moveTargetCamera() {
+  var xvalue = document.getElementById("laX").value;
+  var yvalue = document.getElementById("laY").value;
+  var zvalue = document.getElementById("laZ").value;
+  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
+  // we apply the transformation (see renderObject)
+  camera.setTarget(new BABYLON.Vector3(x, z, y));
+}
+
+function updateCameraTargetTracking() {
+  var inputx = document.getElementById("laX");
+  var inputy = document.getElementById("laY");
+  var inputz = document.getElementById("laZ");
+  
+  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
+    var xvalue = inputx.value;
+    var yvalue = inputy.value;
+    var zvalue = inputz.value;
+    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
+    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
+    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
+    var target = camera.getTarget();
+
+    if (x.toFixed(2) != target.x.toFixed(2) || y.toFixed(2) != target.z.toFixed(2) || z.toFixed(2) != target.y.toFixed(2)){
+      inputx.value = target.x.toFixed(2);
+      inputy.value = target.z.toFixed(2);
+      inputz.value = target.y.toFixed(2);
+    }
+  }
+}
+
 /** Refresh BabylonJs Engine */
 function engineReferesh() {
   engine.resize();
@@ -1122,13 +1202,19 @@ async function createNewObject(data) {
           obj3d[obj3d.length - 1].name = "Custom3D";
           break;
         case "house" :
-          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/house/','house.obj', scene, function (scene) {}));
+          var house = (await BABYLON.SceneLoader.ImportMeshAsync('', './_3D/house/','house.obj', scene)).meshes
+          obj3d.push(house);
+          obj3d[obj3d.length - 1].name = "Custom3D";
           break;
         case "sensor" :
-          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/sensor/','sensor.obj', scene, function (scene) {}));
+          var sensor = (await BABYLON.SceneLoader.ImportMeshAsync('', './_3D/sensor/','sensor.obj', scene)).meshes
+          obj3d.push(sensor);
+          obj3d[obj3d.length - 1].name = "Custom3D";
           break;
         case "truck" :
-          obj3d.push(await BABYLON.SceneLoader.Append('./_3D/truck/','truck.obj', scene, function (scene) {}));
+          var truck = (await BABYLON.SceneLoader.ImportMeshAsync('', './_3D/truck/','truck.obj', scene)).meshes
+          obj3d.push(truck);
+          obj3d[obj3d.length - 1].name = "Custom3D";
           break;
       }
       break;
@@ -1283,7 +1369,7 @@ font[93]=[[[4,25],[ 4,-7]]]
 font[94]=[[[5,25],[ 7,24],[ 8,23],[ 9,21],[ 9,19],[ 8,17],[ 7,16],[ 6,14],[ 6,12],[ 8,10]],[[7,24],[ 8,22],[ 8,20],[ 7,18],[ 6,17],[ 5,15],[ 5,13],[ 6,11],[ 10,9],[ 6,7],[ 5,5],[ 5,3],[ 6,1],[ 7,0],[ 8,-2],[ 8,-4],[ 7,-6]],[[8,8],[ 6,6],[ 6,4],[ 7,2],[ 8,1],[ 9,-1],[ 9,-3],[ 8,-5],[ 7,-6],[ 5,-7]]]
 font[95]=[[[3,6],[ 3,8],[ 4,11],[ 6,12],[ 8,12],[ 10,11],[ 14,8],[ 16,7],[ 18,7],[ 20,8],[ 21,10]],[[3,8],[ 4,10],[ 6,11],[ 8,11],[ 10,10],[ 14,7],[ 16,6],[ 18,6],[ 20,7],[ 21,10],[ 21,12]]]
 
-// make circle shape
+// make circle shape (used for generating fat letters)
 circle = function (radius, steps, centerX, centerY) {
     shape = []
     for (var i = 0; i < steps+1 ; i++) {
@@ -1358,83 +1444,6 @@ make_character = function (a, color, fontscale, spacing,ss,fat,boldness) {
         }
         size = (max - min) * fontscale
         return tempchar
-}
-
-document.getElementById("camX").onchange = moveCamera;
-document.getElementById("camY").onchange = moveCamera;
-document.getElementById("camZ").onchange = moveCamera;
-
-
-function moveCamera() {
-  var xvalue = document.getElementById("camX").value;
-  var yvalue = document.getElementById("camY").value;
-  var zvalue = document.getElementById("camZ").value;
-  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
-  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
-  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
-
-  if (x != camera.position.x || y != camera.position.y || z != camera.position.z){
-    // we apply the transformation (see renderObject)
-    camera.setPosition(new BABYLON.Vector3(x, z, y));
-  }
-}
-
-function updateCameraTracking() {
-  var inputx = document.getElementById("camX");
-  var inputy = document.getElementById("camY");
-  var inputz = document.getElementById("camZ");
-  
-  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
-    var xvalue = inputx.value;
-    var yvalue = inputy.value;
-    var zvalue = inputz.value;
-    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
-    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
-    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
-
-    if (x.toFixed(2) != camera.position.x.toFixed(2) || y.toFixed(2) != camera.position.z.toFixed(2) || z.toFixed(2) != camera.position.y.toFixed(2)){
-      inputx.value = camera.position.x.toFixed(2);
-      inputy.value = camera.position.z.toFixed(2);
-      inputz.value = camera.position.y.toFixed(2);
-    }
-  }
-}
-
-document.getElementById("laX").onchange = moveTargetCamera;
-document.getElementById("laY").onchange = moveTargetCamera;
-document.getElementById("laZ").onchange = moveTargetCamera;
-
-function moveTargetCamera() {
-  var xvalue = document.getElementById("laX").value;
-  var yvalue = document.getElementById("laY").value;
-  var zvalue = document.getElementById("laZ").value;
-  var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
-  var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
-  var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
-  // we apply the transformation (see renderObject)
-  camera.setTarget(new BABYLON.Vector3(x, z, y));
-}
-
-function updateCameraTargetTracking() {
-  var inputx = document.getElementById("laX");
-  var inputy = document.getElementById("laY");
-  var inputz = document.getElementById("laZ");
-  
-  if (inputx !== document.activeElement && inputy !== document.activeElement && inputz !== document.activeElement) {
-    var xvalue = inputx.value;
-    var yvalue = inputy.value;
-    var zvalue = inputz.value;
-    var x = (xvalue == "") ? 0.00 : parseInt(xvalue);
-    var y = (yvalue == "") ? 0.00 : parseInt(yvalue);
-    var z = (zvalue == "") ? 0.00 : parseInt(zvalue);
-    var target = camera.getTarget();
-
-    if (x.toFixed(2) != target.x.toFixed(2) || y.toFixed(2) != target.z.toFixed(2) || z.toFixed(2) != target.y.toFixed(2)){
-      inputx.value = target.x.toFixed(2);
-      inputy.value = target.z.toFixed(2);
-      inputz.value = target.y.toFixed(2);
-    }
-  }
 }
 
 // show axis
@@ -1606,6 +1615,7 @@ function updateInput() {
   camera.setTarget(new BABYLON.Vector3(0, 0, 0));
   timelineSlider.value = 0;
   time.innerHTML = "Time: ";
+  document.getElementById("progressBar").value = 0;
   //
   document.getElementById("undoAction").disabled = !editor.session.getUndoManager().hasUndo();
   document.getElementById("redoAction").disabled = !editor.session.getUndoManager().hasRedo();
