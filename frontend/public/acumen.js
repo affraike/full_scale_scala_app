@@ -1,13 +1,13 @@
 var host = document.location.origin.toString();
 var req = new XMLHttpRequest();
+var buffer = new XMLHttpRequest();
 var url = new URL(host + '/api/acumen');
-var CsrfToken = document.cookie.substring(11);
+var CsrfToken = null;
 var gettingAcumenAnswers = null;
 var framedString = '';
 var isFrame = false;
 var engine = null;
 var obj = null;
-var load
 
 function  handleMessage(messageData) {
   try {
@@ -35,7 +35,7 @@ function  handleMessage(messageData) {
         try {
           console.log("send jsReady");
           req.open('POST', url, true);
-          req.setRequestHeader("Csrf-Token", CsrfToken);
+          //req.setRequestHeader("Csrf-Token", CsrfToken);
           req.send("[" + JSON.stringify(jsReady) + "]\r");
           req.onload = function(e) {
             console.log(this.responseText);
@@ -241,7 +241,7 @@ function  handleMessage(messageData) {
                 let isEnclosure = obj[i][j][k].isEnclosure;
                 input.onclick = function () {
                   req.open('POST', url, true);
-                  req.setRequestHeader("Csrf-Token", CsrfToken);
+                  //req.setRequestHeader("Csrf-Token", CsrfToken);
                   req.send("[" + JSON.stringify(setSemantics(tempID)) + "]\r");
                   req.onload = function(e) {
                     console.log(this.responseText);
@@ -272,7 +272,7 @@ function  handleMessage(messageData) {
                 if (this.checked == true) { contractionAction.value = 'true'; }
                 else { contractionAction.value = 'false'; }
                 req.open('POST', url, true);
-                req.setRequestHeader("Csrf-Token", CsrfToken);
+                //req.setRequestHeader("Csrf-Token", CsrfToken);
                 req.send("[" + JSON.stringify(contractionAction) + "]\r");
                 req.onload = function(e) {
                   console.log(this.responseText);
@@ -428,11 +428,12 @@ function  handleMessage(messageData) {
 /** Action when user closes the browser window */
 window.onbeforeunload = async function () {
   req.open('POST', url, true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
+  //req.setRequestHeader("Csrf-Token", CsrfToken);
   req.send("[" + JSON.stringify(exitAction) + "]\r");
   await resetScene();
   await clearTimeout(gettingAcumenAnswers);
-  if (editedSinceLastSave) return "You have unsaved data. Please check before closing the window.";
+  // We always ask for confirmation before closing to close Acumen safely.
+  return "You have unsaved data. Please check before closing the window.";
 }
 
 var editor = null;
@@ -466,7 +467,7 @@ function getResponse(res, type) {
   switch (res) {
     case 'save':
       req.open('POST', url, true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
+      //req.setRequestHeader("Csrf-Token", CsrfToken);
       req.send("[" + JSON.stringify(saveFile(false)) + "]\r");
       req.onload = function(e) {
         console.log(this.responseText);
@@ -480,7 +481,7 @@ function getResponse(res, type) {
       }
       else if (type === 'openAction') {
         req.open('POST', url, true);
-        req.setRequestHeader("Csrf-Token", CsrfToken);
+        //req.setRequestHeader("Csrf-Token", CsrfToken);
         req.send("[" + JSON.stringify(openAction) + "]\r");
         req.onload = function(e) {
           console.log(this.responseText);
@@ -492,7 +493,7 @@ function getResponse(res, type) {
     case 'discard':
       if (type === 'newAction') { 
         req.open('POST', url, true);
-        req.setRequestHeader("Csrf-Token", CsrfToken);
+        //req.setRequestHeader("Csrf-Token", CsrfToken);
         req.send("[" + JSON.stringify(newAction) + "]\r");
         req.onload = function(e) {
           console.log(this.responseText);
@@ -500,7 +501,7 @@ function getResponse(res, type) {
       }
       else if (type === 'openAction') { 
         req.open('POST', url, true);
-        req.setRequestHeader("Csrf-Token", CsrfToken);
+        //req.setRequestHeader("Csrf-Token", CsrfToken);
         req.send("[" + JSON.stringify(openAction) + "]\r");
         req.onload = function(e) {
           console.log(this.responseText);
@@ -518,13 +519,14 @@ function getResponse(res, type) {
 
 /** Assign values after browser finished loading the page */
 window.onload = function () {
+  CsrfToken = document.cookie.substring(11);
   populateFontMenu();
   populateThemeMenu();
   document.getElementById("newAction").onclick = function () {
     if (editedSinceLastSave) { confirmContinue.show('save'); }
     else {
       req.open('POST', url, true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
+      //req.setRequestHeader("Csrf-Token", CsrfToken);
       req.send("[" + JSON.stringify(newAction) + "]\r");
       req.onload = function(e) {
         console.log(this.responseText);
@@ -536,7 +538,7 @@ window.onload = function () {
     if (editedSinceLastSave) { confirmContinue.show('open'); }
     else {
       req.open('POST', url, true);
-      req.setRequestHeader("Csrf-Token", CsrfToken);
+      //req.setRequestHeader("Csrf-Token", CsrfToken);
       req.send("[" + JSON.stringify(openAction) + "]\r");
       req.onload = function(e) {
         console.log(this.responseText);
@@ -546,7 +548,7 @@ window.onload = function () {
   };
   document.getElementById("saveAction").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(saveFile(true)) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -554,7 +556,7 @@ window.onload = function () {
   };
   document.getElementById("saveAsAction").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(saveFileAs(true)) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -562,7 +564,7 @@ window.onload = function () {
   };
   document.getElementById("recoverAction").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(recoverAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -638,7 +640,7 @@ window.onload = function () {
     if (this.checked == true) { simulatorFieldsAction.value = 'true'; }
     else { simulatorFieldsAction.value = 'false'; }
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(simulatorFieldsAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -648,7 +650,7 @@ window.onload = function () {
     if (this.checked == true) { childCountAction.value = 'true'; }
     else { childCountAction.value = 'false'; }
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(childCountAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -658,7 +660,7 @@ window.onload = function () {
     if (this.checked == true) { rngSeedsAction.value = 'true'; }
     else { rngSeedsAction.value = 'false'; }
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(rngSeedsAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -668,7 +670,7 @@ window.onload = function () {
     if (this.checked == true) { normalizationAction.value = 'true'; }
     else { normalizationAction.value = 'false'; }
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(normalizationAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -676,7 +678,7 @@ window.onload = function () {
   };
   document.getElementById("startServer").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(startServerAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -684,7 +686,7 @@ window.onload = function () {
   };
   document.getElementById("stopServer").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(stopServerAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -692,7 +694,7 @@ window.onload = function () {
   };
   document.getElementById("resetDevice").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -700,7 +702,7 @@ window.onload = function () {
   };
   document.getElementById("serverLink").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(resetDeviceAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -708,7 +710,7 @@ window.onload = function () {
   };
   document.getElementById("playButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(playAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -716,7 +718,7 @@ window.onload = function () {
   };
   document.getElementById("pauseButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(pauseAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -724,7 +726,7 @@ window.onload = function () {
   };
   document.getElementById("stepButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(stepAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -732,7 +734,7 @@ window.onload = function () {
   };
   document.getElementById("stopButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(stopAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -740,7 +742,7 @@ window.onload = function () {
   };
   document.getElementById("playMenuButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(playAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -748,7 +750,7 @@ window.onload = function () {
   };
   document.getElementById("pauseMenuButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(pauseAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -756,7 +758,7 @@ window.onload = function () {
   };
   document.getElementById("stepMenuButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(stepAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -764,7 +766,7 @@ window.onload = function () {
   };
   document.getElementById("stopMenuButton").onclick = function () {
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(stopAction) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -799,7 +801,7 @@ window.onload = function () {
   document.getElementById("plotButton").onclick = function () {
     document.getElementById('plotTabError').style.display = "none";
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(plotButton) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -809,7 +811,7 @@ window.onload = function () {
   document.getElementById("traceButton").onclick = function () {
     document.getElementById('traceTabError').style.display = "none";
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(traceButton) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -819,7 +821,7 @@ window.onload = function () {
   document.getElementById("threeDButton").onclick = function () {
     document.getElementById('threeDTabError').style.display = "none";
     req.open('POST', url, true);
-    req.setRequestHeader("Csrf-Token", CsrfToken);
+    //req.setRequestHeader("Csrf-Token", CsrfToken);
     req.send("[" + JSON.stringify(threeDButton) + "]\r");
     req.onload = function(e) {
       console.log(this.responseText);
@@ -844,6 +846,8 @@ window.onload = function () {
   editor.setOption('cursorStyle', 'smooth');
   editor.session.setOptions({ tabSize: 2, useSoftTabs: true });
   editor.on("input", updateInput);
+  document.getElementById("editor").style.fontSize = '12px';
+  document.getElementById("editor").style.fontFamily = "Lucida Console";
 
   //BabylonJS related elements
   startAnimationButton = document.getElementById('BabPlay');
@@ -898,11 +902,16 @@ window.onload = function () {
 
   // After loading all elements, we launch Acumen
   req.open('POST', host + '/api/init', true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
+  //req.setRequestHeader("Csrf-Token", CsrfToken);
   req.send();
   req.onload = function(e) {
     console.log(this.responseText);
-    loopBuffer();
+    if (this.status == 503) {
+      document.getElementById('loader').style.display = "none"
+      document.getElementById('error').style.display = "flex"
+    } else {
+      loopBuffer();
+    }
   }
 }
 
@@ -1510,10 +1519,10 @@ document.getElementById("showAxis").onclick = function() {
 /** Helper Functions */
 function loopBuffer() {
   var start = window.performance.now();
-  req.open('GET', host  + '/api/buffer', true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
-  req.send();
-  req.onload = function(event) {
+  buffer.open('GET', host  + '/api/buffer', true);
+  //req.setRequestHeader("Csrf-Token", CsrfToken);
+  buffer.send();
+  buffer.onload = function(event) {
     var msg = this.responseText.substring(1, this.responseText.length-1);
 
     if (isFrame == true) {
@@ -1555,6 +1564,7 @@ function loopBuffer() {
     }
   };
   var stop = window.performance.now();
+  // Did not use setInterval to make sure the function ended before another loop is called.
   gettingAcumenAnswers = setTimeout(loopBuffer, Math.max(10, 333 - (stop - start)));
 }
 
@@ -1572,7 +1582,7 @@ function populateFontMenu() {
     input.onclick = function () { 
       console.log("set theme : " + fonts[i]);
       editorNode.style.fontFamily = fonts[i]; }
-    if (i == 0) { input.checked = true; }
+    if (i == 3) { input.checked = true; }
     label.appendChild(input);
     label.appendChild(text);
     node.appendChild(label);
@@ -1620,7 +1630,7 @@ function updateInput() {
   document.getElementById("undoAction").disabled = !editor.session.getUndoManager().hasUndo();
   document.getElementById("redoAction").disabled = !editor.session.getUndoManager().hasRedo();
   req.open('POST', url, true);
-  req.setRequestHeader("Csrf-Token", CsrfToken);
+  //req.setRequestHeader("Csrf-Token", CsrfToken);
   req.send("[" + JSON.stringify(getCode()) + "]\r");
   req.onload = function(e) {
     console.log(this.responseText);
@@ -1780,7 +1790,7 @@ function createChildNodes(file, parentNode) {
         fileNodeC.id = '[ID]' + file[1][j][0][1];
         fileNodeC.addEventListener("click", function () { 
           req.open('POST', url, true);
-          req.setRequestHeader("Csrf-Token", CsrfToken);
+          //req.setRequestHeader("Csrf-Token", CsrfToken);
           req.send("[" + JSON.stringify(selectFile(fileNodeC.id.substring(4))) + "]\r") 
         });
         let textC = document.createTextNode(file[1][j][1][1]);

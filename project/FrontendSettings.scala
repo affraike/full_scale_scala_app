@@ -16,6 +16,8 @@ object FrontendSettings {
     npmDevDependencies in Compile += "copy-webpack-plugin" -> "5.0.2",
     npmDevDependencies in Compile += "webpack-merge" -> "4.2.1",
     npmDevDependencies in Compile += "plotly.js-dist"-> "1.54.3",
+    npmDevDependencies in Compile += "cypress"-> "5.0.0",
+    npmDevDependencies in Compile += "cypress-wait-until"-> "1.7.1",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.5" % Test,
     // laminar
     libraryDependencies += "com.raquo" %%% "laminar" % "0.7.2",

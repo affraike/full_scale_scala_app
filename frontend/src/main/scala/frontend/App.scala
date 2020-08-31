@@ -24,44 +24,6 @@ object App {
 
   private val css = AppCSS
 
-  //Toogle button communication
-  val postBus2: EventBus[String] = new EventBus()
-
-  val returned2: EventStream[String] = postBus2.events.flatMap(
-    str =>
-      EventStream.fromFuture(
-        boilerplate
-          .response(asStringAlways)
-          .post(HttpClient.path("com").param("str", str.toString))
-          .send()
-          .map(_.body)
-      )
-  )
-
-  def change(bool: Boolean): String = {
-    if (bool){
-      return "on"
-    }else{
-      return "off"
-    }
-  }
-
-  def sendBackend(requestPath: String, msg: String): Unit = {
-    if (msg == ""){
-      boilerplate
-        .response(asStringAlways)
-        .post(HttpClient.path(requestPath))
-        .send()
-        .map(_.body)
-    }else{
-      boilerplate
-        .response(asStringAlways)
-        .post(HttpClient.path(requestPath).param("msg", msg.toString))
-        .send()
-        .map(_.body)
-    }
-  }
-
   // Handle API rendering
   def apply(): ReactiveHtmlElement[html.Div] = div(
     className := "App",
@@ -74,6 +36,11 @@ object App {
           div(cls := "loader-wheel")
         ),
         div(cls := "loader-text")
+      )
+    ),
+    div(id := "error", display := "none",
+      div(display:= "flex",
+        span("Acumen has not been closed properly. Please resart the server and try again.")
       )
     ),
     div(cls := "navbar",

@@ -47,27 +47,15 @@ final class HomeController @Inject()(
     }
   }
 
-  def hello(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok("Hello from play! BTW, Acumen is " + getStateAcumen())
-    //Call a method from Acumen's class "App.scala" : Done
-
-  }
-
-  def helloNbr(nbr: Int): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(s"You gave me $nbr")
-  }
-
   def initAcumen(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     if (getInitState()){
       setInitState(false)
       Main.main(Array())
+      Ok("Acumen Initialized")
+    } else {
+      ServiceUnavailable("Acumen not closed properly")
     }
-    Ok("Acumen Initialized")
-  }
-
-  def changeAcumenState(str: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    setStateAcumen(str)
-    Ok("Acumen state changed to " + str)
+    
   }
 
   def getAcumenMessage(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>

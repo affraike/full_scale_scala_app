@@ -96,6 +96,24 @@ transition: opacity 1000ms;
 z-index: 99;
 }
 
+#error {
+width: 100%;
+align-items: center;
+background-color: black;
+display: flex;
+height: 100%;
+justify-content: center;
+margin: 0;
+position: absolute;
+transition: opacity 1000ms;
+z-index: 99;
+}
+
+#error span {
+color: #fff;
+font-family: arial, sans-serif;
+}
+
 .loader-wheel {
 animation: spin 1s infinite linear;
 border: 2px solid rgba(30, 30, 30, 0.5);

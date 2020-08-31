@@ -11,9 +11,10 @@ import benchTool._
 import java.net.{ServerSocket, Socket}
 import acumen.interpreters.Common.paramModelTxt
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import java.util.Locale
 
 object Main {
-
+  Locale.setDefault(Locale.US);
   //
   // What should be in Main
   //
