@@ -303,9 +303,14 @@ function  handleMessage(messageData) {
             var rowNode = document.createElement("TR");
             for (var j in obj[1][i]) {
               var columnNode;
-              if (i == 0) columnNode = document.createElement("TH");
-              else columnNode = document.createElement("TD");
-              var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
+              if (i == 0) {
+                columnNode = document.createElement("TH");
+                var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"').split(/\)./)[1]);
+              }
+              else {
+                columnNode = document.createElement("TD");
+                var textnode = document.createTextNode(obj[1][i][j].replace(/@quote@/g, '"'));
+              }
               columnNode.appendChild(textnode);
               rowNode.appendChild(columnNode);
             }
@@ -346,9 +351,13 @@ function  handleMessage(messageData) {
                   y: yArray,
                   xaxis: 'x' + temp,
                   yaxis: 'y' + temp,
-                  name: obj[temp].title,
+                  name: obj[temp].title.split(/\)./)[1],
                   type: 'scatter',
-                  mode: 'lines'
+                  mode: 'lines',
+                  line: {
+                    color: 'rgb(255, 0, 0)'
+                  },
+                  showlegend: true
                 };
                 data.push(trace);
                 xArray = [];
@@ -356,9 +365,14 @@ function  handleMessage(messageData) {
                 temp += 1;
               }
               var layout = {
-                grid: { rows: data.length, columns: 1, pattern: 'independent' },
+                grid: { rows: 1, columns: 1, pattern: 'independent'},
               };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {displayModeBar: true});
+              for (let i=0; i < data.length; i++){
+                let node = document.createElement("div");
+                node.id = "chart" + i;
+                document.getElementById("plotChart").appendChild(node);
+                Plotly.newPlot(node, [data[i]], layout, {responsive: true});
+              }
               break;
             case "discrete":
               console.log("Not yet implemented");
@@ -392,8 +406,12 @@ function  handleMessage(messageData) {
                     y: yArray,
                     xaxis: 'x' + temp,
                     yaxis: 'y' + temp,
-                    name: plotTitles[temp - 1],
+                    name: plotTitles[temp - 1].split(/\)./)[1],
                     type: 'scatter',
+                    line: {
+                      color: 'rgb(255, 0, 0)'
+                    },
+                    showlegend: true
                   };
                 }
                 else {
@@ -402,9 +420,13 @@ function  handleMessage(messageData) {
                     y: yArray,
                     xaxis: 'x' + temp,
                     yaxis: 'y' + temp,
-                    name: plotTitles[temp - 1],
+                    name: plotTitles[temp - 1].split(/\)./)[1],
                     fill: 'tonexty',
-                    type: 'scatter'
+                    type: 'scatter',
+                    line: {
+                      color: 'rgb(255, 0, 0)'
+                    },
+                    showlegend: true
                   };
                 }
                 data.push(trace);
@@ -412,9 +434,16 @@ function  handleMessage(messageData) {
                 yArray = [];
               }
               var layout = {
-                grid: { rows: data.length / 2, columns: 1, pattern: 'independent' },
+                grid: { rows: 1, columns: 1, pattern: 'independent' },
               };
-              Plotly.newPlot(document.getElementById("plotTab"), data, layout, {displayModeBar: true});
+              for (let i=0; i < data.length; i+2){
+                let node = document.createElement("div");
+                node.id = "chart" + i;
+                node.style.display = 'flex';
+                let enclosureData = [data[i], data[i+1]]
+                document.getElementById("plotChart").appendChild(node);
+                Plotly.newPlot(node, enclosureData, layout, {responsive: true});
+              }
               break;
           }
         }
@@ -1566,7 +1595,7 @@ function loopBuffer() {
 }
 
 function populateFontMenu() {
-  let fonts = ['Monospaced', 'Consolas', 'Courier New', 'Lucida Console'];
+  let fonts = [/*'Monospaced', */'Consolas', 'Courier New', 'Lucida Console'];
   menuNode = document.getElementById("fontMenu");
   editorNode = document.getElementById("editor");
   for (let i = 0; i < fonts.length; i++) {
@@ -1615,9 +1644,9 @@ function updateInput() {
   while (table.hasChildNodes()) {
     table.removeChild(table.firstChild);
   }
-  var graphDiv = document.getElementById("plotTab");
-  while (graphDiv.data != undefined && graphDiv.data.length>0){
-    Plotly.deleteTraces(graphDiv, [0]);
+  var graphDiv = document.getElementById("plotChart");
+  while (graphDiv.hasChildNodes()){
+    graphDiv.removeChild(graphDiv.firstChild);
   }
   document.getElementById("showAxis").style.checked = false;
   camera.position = defaultCameraPosition;

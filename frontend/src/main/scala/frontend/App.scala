@@ -307,8 +307,9 @@ object App {
           button(id := "threeDButton", cls := "vtablinks","_3D"
           )
         ),
-        div(id := "plotTab", cls := "vtabcontent", height:= "862px", width := "calc(100% - 6px)", overflowY:= "scroll",
-          span(id:= "plotTabError", display:= "none", "An error occured while loading Plot data, please try again.")
+        div(id := "plotTab", cls := "vtabcontent", height:= "862px", width := "calc(100% - 6px)",
+          span(id:= "plotTabError", display:= "none", "An error occured while loading Plot data, please try again."),
+          div(id:= "plotChart")
         ),
         div(id := "traceTab", cls := "vtabcontent", display:= "none", height:= "862px", width := "calc(100% - 6px)",
           span(id:= "traceTabError", display:= "none", "An error occured while loading Table data, please try again."),
