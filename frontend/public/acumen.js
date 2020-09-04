@@ -3,6 +3,7 @@ var req = new XMLHttpRequest();
 var buffer = new XMLHttpRequest();
 var url = new URL(host + '/api/acumen');
 var CsrfToken = null;
+var editor = null;
 var gettingAcumenAnswers = null;
 var framedString = '';
 var isFrame = false;
@@ -436,8 +437,6 @@ window.onbeforeunload = async function () {
   return "You have unsaved data. Please check before closing the window.";
 }
 
-var editor = null;
-
 /** Prompts and Dialogs */
 var confirmContinue = new function () {
   this.show = function (type) {
@@ -847,7 +846,7 @@ window.onload = function () {
   editor.session.setOptions({ tabSize: 2, useSoftTabs: true });
   editor.on("input", updateInput);
   document.getElementById("editor").style.fontSize = '12px';
-  document.getElementById("editor").style.fontFamily = "Lucida Console";
+  document.getElementById("editor").style.fontFamily = 'Lucida Console';
 
   //BabylonJS related elements
   startAnimationButton = document.getElementById('BabPlay');
@@ -897,6 +896,27 @@ window.onload = function () {
   slower.onclick = function () {
     frameRate--;
   };
+
+  // showing and setting camera position in real time
+  document.getElementById("camX").onchange = moveCamera;
+  document.getElementById("camY").onchange = moveCamera;
+  document.getElementById("camZ").onchange = moveCamera;
+  // showing and setting camera's target position in real time
+  document.getElementById("laX").onchange = moveTargetCamera;
+  document.getElementById("laY").onchange = moveTargetCamera;
+  document.getElementById("laZ").onchange = moveTargetCamera;
+
+  document.getElementById("showAxis").onclick = function() {
+    if (document.getElementById("showAxis").checked == true) {
+      showAxis(5);
+    } else {
+      obj3d.forEach(obj => {
+        if (obj.id.toString().includes("showAxis")) {
+          obj.dispose();
+        }
+      });
+    }
+  }
 
   InitializeBabylonJSScene();
 
@@ -1018,12 +1038,6 @@ function createCamera_Light() {
   light.intensity = 0.5;
 }
 
-// showing and setting camera position in real time
-document.getElementById("camX").onchange = moveCamera;
-document.getElementById("camY").onchange = moveCamera;
-document.getElementById("camZ").onchange = moveCamera;
-
-
 function moveCamera() {
   var xvalue = document.getElementById("camX").value;
   var yvalue = document.getElementById("camY").value;
@@ -1058,11 +1072,6 @@ function updateCameraTracking() {
     }
   }
 }
-
-// showing and setting camera's target position in real time
-document.getElementById("laX").onchange = moveTargetCamera;
-document.getElementById("laY").onchange = moveTargetCamera;
-document.getElementById("laZ").onchange = moveTargetCamera;
 
 function moveTargetCamera() {
   var xvalue = document.getElementById("laX").value;
@@ -1280,7 +1289,7 @@ function renderObject(data) {
 
 // 3D text rendering
 // fontdata, used to create letters
-font=[]
+var font=[]
 font[0]=[[[0,21]],[[15,21]]]
 font[1]=[[[0,21]],[[15,21]]]
 font[2]=[[[5,21],[ 5,7]],[[5,2],[ 4,1],[ 5,0],[ 6,1],[ 5,2]]]
@@ -1379,7 +1388,7 @@ font[94]=[[[5,25],[ 7,24],[ 8,23],[ 9,21],[ 9,19],[ 8,17],[ 7,16],[ 6,14],[ 6,12
 font[95]=[[[3,6],[ 3,8],[ 4,11],[ 6,12],[ 8,12],[ 10,11],[ 14,8],[ 16,7],[ 18,7],[ 20,8],[ 21,10]],[[3,8],[ 4,10],[ 6,11],[ 8,11],[ 10,10],[ 14,7],[ 16,6],[ 18,6],[ 20,7],[ 21,10],[ 21,12]]]
 
 // make circle shape (used for generating fat letters)
-circle = function (radius, steps, centerX, centerY) {
+function circle(radius, steps, centerX, centerY) {
     shape = []
     for (var i = 0; i < steps+1 ; i++) {
         x = centerX + radius * Math.cos(Math.PI * i / steps * 2 - Math.PI / 2)
@@ -1388,7 +1397,7 @@ circle = function (radius, steps, centerX, centerY) {
     }
 }
 
-make_textline = function (str, x,y,z,align, color,fontscale, spacing,fat,boldness,gloss) {
+function make_textline(str, x,y,z,align, color,fontscale, spacing,fat,boldness,gloss) {
    fontscale/=100
     if(fat){
         circle(boldness, 36, 0, 0)
@@ -1422,7 +1431,7 @@ make_textline = function (str, x,y,z,align, color,fontscale, spacing,fat,boldnes
     word.position=new BABYLON.Vector3(x,y,z)
     return word
 }
-make_character = function (a, color, fontscale, spacing,ss,fat,boldness) {
+function make_character(a, color, fontscale, spacing,ss,fat,boldness) {
     min = 100
     max = -100
     tempchar =  new BABYLON.Mesh.CreateBox("name", 0, scene);
@@ -1456,7 +1465,7 @@ make_character = function (a, color, fontscale, spacing,ss,fat,boldness) {
 }
 
 // show axis
-var showAxis = function(size) {
+function showAxis(size) {
   var makeTextPlane = function(text, color, size) {
   var dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 50, scene, true);
   dynamicTexture.hasAlpha = true;
@@ -1501,18 +1510,6 @@ var showAxis = function(size) {
   obj3d.push(axisZ);
   obj3d[obj3d.length - 1].id = "showAxis Z";
 };
-
-document.getElementById("showAxis").onclick = function() {
-  if (document.getElementById("showAxis").checked == true) {
-    showAxis(5);
-  } else {
-    obj3d.forEach(obj => {
-      if (obj.id.toString().includes("showAxis")) {
-        obj.dispose();
-      }
-    });
-  }
-}
 
 /** =================================  END BABYLONJS CANVAS  ======================================== */
 
@@ -1569,7 +1566,7 @@ function loopBuffer() {
 }
 
 function populateFontMenu() {
-  let fonts = ["Monospaced", "Consolas", "Courier New", "Lucida Console"];
+  let fonts = ['Monospaced', 'Consolas', 'Courier New', 'Lucida Console'];
   menuNode = document.getElementById("fontMenu");
   editorNode = document.getElementById("editor");
   for (let i = 0; i < fonts.length; i++) {
@@ -1579,6 +1576,7 @@ function populateFontMenu() {
     let text = document.createTextNode(fonts[i]);
     input.setAttribute('type', "radio");
     input.setAttribute('name', 'font');
+    input.setAttribute('id', fonts[i].replace(' ', ''));
     input.onclick = function () { 
       console.log("set theme : " + fonts[i]);
       editorNode.style.fontFamily = fonts[i]; }
@@ -1600,6 +1598,7 @@ function populateThemeMenu() {
     let text = document.createTextNode(themes[i]);
     input.setAttribute('type', "radio");
     input.setAttribute('name', 'theme');
+    input.setAttribute('id', themes[i]);
     input.onclick = function () { editor.setTheme("ace/theme/" + themes[i]); }
     if (i == 0) { input.checked = true; }
     label.appendChild(input);
@@ -1748,6 +1747,7 @@ function showBrowser(file) {
       let folderNode = document.createElement("li");
       let span = document.createElement('span');
       span.innerHTML = file[0][1][i][2][1];
+      span.id = '[ID]' + file[0][1][i][1][1];
       span.className = 'caret';
       folderNode.appendChild(span);
       let nestedNode = document.createElement("ol");
@@ -1775,6 +1775,7 @@ function createChildNodes(file, parentNode) {
         let folderNodeC = document.createElement("li");
         let spanC = document.createElement('span');
         spanC.innerHTML = file[1][j][2][1];
+        spanC.id = '[ID]' + file[1][j][1][1];
         spanC.className = 'caret';
         folderNodeC.appendChild(spanC);
         let nestedNodeC = document.createElement("ol");

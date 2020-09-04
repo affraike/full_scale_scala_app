@@ -80,7 +80,9 @@ object App {
               hr(),
               button(`type` := "button", id := "selectAllAction","Select All"
               ),
-              button(`type` := "button", id := "showFind","Find"
+              label(
+                input(`type` := "checkbox", id := "showFind", checked := false),
+                span("Find")
               )
             )
           ),
@@ -449,13 +451,6 @@ object App {
           )
         )
       )
-    ),
-    script(
-      typ:="text/javascript",
-      src:="./ace-noconflict/ace.js"
-    ),
-    script(
-      src:="./plotly.min.js"
     ),
     script(
       src:="./acumen.js"

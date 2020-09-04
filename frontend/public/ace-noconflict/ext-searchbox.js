@@ -469,12 +469,14 @@ var SearchBox = function(editor, range, showReplaceForm) {
         this.active = false;
         this.setSearchRange(null);
         this.editor.off("changeSession", this.setSession);
-        
+
+        window.document.getElementById("showFind").checked = false;
         this.element.style.display = "none";
         this.editor.keyBinding.removeKeyboardHandler(this.$closeSearchBarKb);
         this.editor.focus();
     };
     this.show = function(value, isReplace) {
+	window.document.getElementById("showFind").checked = true;
         this.active = true;
         this.editor.on("changeSession", this.setSession);
         this.element.style.display = "";
