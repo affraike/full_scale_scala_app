@@ -2,7 +2,6 @@ target
 dist
 data
 null
-Cypress
 
 .DS_Store
 .idea
